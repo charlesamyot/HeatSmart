@@ -13,3 +13,7 @@ dist/
 *.egg-info/
 venv/
 .venv/
+*.app/
+macos/build/
+macos/dist/
+.claude-flow/
