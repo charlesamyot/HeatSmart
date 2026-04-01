@@ -6,7 +6,8 @@ config/.env
 config/*.db
 *.db
 .pytest_cache/
-.claude/
+.claude/settings*
+.claude/plans/
 node_modules/
 dist/
 .DS_Store

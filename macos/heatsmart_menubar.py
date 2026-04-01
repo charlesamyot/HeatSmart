@@ -67,6 +67,7 @@ class HeatSmartApp(rumps.App):
             rumps.MenuItem("Restart Server", callback=self.restart_server),
             None,
             rumps.MenuItem("Settings...", callback=self.open_settings),
+            rumps.MenuItem("View Server Log", callback=self.view_log),
             None,
             rumps.MenuItem("Quit HeatSmart", callback=self.quit_app),
         ]
@@ -80,24 +81,39 @@ class HeatSmartApp(rumps.App):
     def start_server(self, open_browser=True):
         env = os.environ.copy()
         env["PYTHONUNBUFFERED"] = "1"
+        # Ensure user site-packages are on PYTHONPATH
+        env["PYTHONPATH"] = APP_DIR
 
-        self.server_process = subprocess.Popen(
-            [
-                PYTHON_PATH, "-m", "uvicorn",
-                "src.backend.main:app",
-                "--host", "127.0.0.1",
-                "--port", str(self.port),
-            ],
-            cwd=APP_DIR,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
+        log_path = os.path.join(APP_DIR, "config", "server.log")
+        log_file = open(log_path, "w")
 
-        # Wait for the server to actually be ready (up to 15 seconds)
+        cmd = [
+            PYTHON_PATH, "-m", "uvicorn",
+            "src.backend.main:app",
+            "--host", "127.0.0.1",
+            "--port", str(self.port),
+        ]
+
         self.status_item.title = f"Server: Starting on port {self.port}..."
-        for _ in range(30):
+
+        try:
+            self.server_process = subprocess.Popen(
+                cmd, cwd=APP_DIR, env=env,
+                stdout=log_file, stderr=subprocess.STDOUT,
+            )
+        except Exception as e:
+            self.status_item.title = f"Server: Launch failed ({e})"
+            self.title = "🔥⚠️"
+            return
+
+        # Wait for the server to actually be ready (up to 20 seconds)
+        for _ in range(40):
             time.sleep(0.5)
+            # Check if process died
+            if self.server_process.poll() is not None:
+                self.status_item.title = "Server: Crashed (check config/server.log)"
+                self.title = "🔥⚠️"
+                return
             if self._port_is_open():
                 break
 
@@ -108,7 +124,7 @@ class HeatSmartApp(rumps.App):
             if open_browser:
                 webbrowser.open(self.url)
         else:
-            self.status_item.title = "Server: Failed to start"
+            self.status_item.title = "Server: Timed out (check config/server.log)"
             self.title = "🔥⚠️"
             return
 
@@ -176,6 +192,13 @@ class HeatSmartApp(rumps.App):
                     rumps.alert("Invalid Port", "Port must be between 1024 and 65535.")
             except ValueError:
                 rumps.alert("Invalid Port", "Please enter a valid number.")
+
+    def view_log(self, _):
+        log_path = os.path.join(APP_DIR, "config", "server.log")
+        if os.path.exists(log_path):
+            subprocess.Popen(["open", "-a", "Console", log_path])
+        else:
+            rumps.alert("No Log", "No server log file found yet.")
 
     def quit_app(self, _):
         self.stop_server()
