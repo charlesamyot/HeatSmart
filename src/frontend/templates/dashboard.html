@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — EcoNet Monitor{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1 class="page-title" style="margin-bottom:0">Dashboard</h1>
+  <button class="btn btn--outline btn--sm" id="refresh-btn" onclick="forceRefresh()">↻ Refresh</button>
+</div>
+
+<!-- Status cards -->
+<div class="status-grid" id="status-grid">
+  <div class="card">
+    <div class="card-title">Hot Water</div>
+    <div class="card-value" id="hot-water-avail">—</div>
+    <div class="card-sub" id="current-temp">Temp: —</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Setpoint</div>
+    <div class="setpoint-control">
+      <button class="btn btn--outline btn--sm" onclick="adjustSetpoint(-1)">−</button>
+      <span class="setpoint-display" id="setpoint-display">—</span>
+      <button class="btn btn--outline btn--sm" onclick="adjustSetpoint(1)">+</button>
+    </div>
+  </div>
+  <div class="card" style="position:relative">
+    <div class="card-title">Mode</div>
+    <button class="mode-btn" id="mode-btn" onclick="toggleModePopover()">
+      <span class="mode-btn-dot" id="mode-dot"></span>
+      <span id="mode-label">—</span>
+      <span style="margin-left:auto;font-size:.7rem;opacity:.5">▼</span>
+    </button>
+    <div class="mode-popover" id="mode-popover">
+      <div class="mode-option" data-mode="ENERGY_SAVING" onclick="selectMode('ENERGY_SAVING')">
+        <span class="mode-opt-dot" style="background:#38a169"></span>
+        <div><div class="mode-opt-name">Energy Saving</div><div class="mode-opt-desc">Heat pump priority, most efficient</div></div>
+      </div>
+      <div class="mode-option" data-mode="HEAT_PUMP_ONLY" onclick="selectMode('HEAT_PUMP_ONLY')">
+        <span class="mode-opt-dot" style="background:#2b6cb0"></span>
+        <div><div class="mode-opt-name">Heat Pump Only</div><div class="mode-opt-desc">Compressor only, no backup element</div></div>
+      </div>
+      <div class="mode-option" data-mode="HIGH_DEMAND" onclick="selectMode('HIGH_DEMAND')">
+        <span class="mode-opt-dot" style="background:#dd6b20"></span>
+        <div><div class="mode-opt-name">High Demand</div><div class="mode-opt-desc">Fast recovery, uses both heat sources</div></div>
+      </div>
+      <div class="mode-option" data-mode="ELECTRIC_MODE" onclick="selectMode('ELECTRIC_MODE')">
+        <span class="mode-opt-dot" style="background:#e53e3e"></span>
+        <div><div class="mode-opt-name">Electric</div><div class="mode-opt-desc">Element only, highest energy use</div></div>
+      </div>
+      <div class="mode-option" data-mode="VACATION" onclick="selectMode('VACATION')">
+        <span class="mode-opt-dot" style="background:#805ad5"></span>
+        <div><div class="mode-opt-name">Vacation</div><div class="mode-opt-desc">Low-power standby while away</div></div>
+      </div>
+      <div class="mode-option" data-mode="OFF" onclick="selectMode('OFF')">
+        <span class="mode-opt-dot" style="background:#a0aec0"></span>
+        <div><div class="mode-opt-name">Off</div><div class="mode-opt-desc">Water heater disabled</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">
+      <span class="running-dot" id="running-dot" role="img" aria-label="Heating status"></span>
+      Status
+    </div>
+    <div class="card-value" style="font-size:1rem" id="running-label" role="status" aria-live="polite">—</div>
+    <div class="card-sub" id="today-cost">Today: —</div>
+  </div>
+</div>
+
+<!-- Energy chart -->
+<div class="section card">
+  <div class="section-header">
+    <span class="section-title">Energy Consumption</span>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="loadEnergy('day', this)">Today</button>
+      <button class="tab-btn" onclick="loadEnergy('yesterday', this)">Yesterday</button>
+      <button class="tab-btn" onclick="loadEnergy('week', this)">7 Days</button>
+      <button class="tab-btn" onclick="loadEnergy('month', this)">30 Days</button>
+    </div>
+  </div>
+  <div class="tou-legend">
+    <span><span class="tou-swatch peak"></span>Peak ($0.1674/kWh)</span>
+    <span><span class="tou-swatch mid"></span>Mid-Peak ($0.1465/kWh)</span>
+    <span><span class="tou-swatch off"></span>Off-Peak ($0.0837/kWh)</span>
+  </div>
+  <div class="chart-wrap"><canvas id="energy-chart"></canvas></div>
+  <div style="margin-top:.75rem;display:flex;gap:2rem">
+    <span>Total: <strong id="total-kwh">— kWh</strong></span>
+    <span>Cost: <strong id="total-cost">$—</strong></span>
+  </div>
+</div>
+
+<!-- Recent cycles -->
+<div class="section card">
+  <div class="section-header">
+    <span class="section-title">Recent Heating Cycles</span>
+    <span id="cycle-count" class="badge badge--unknown">—</span>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Started</th><th>Duration</th><th>Mode</th><th>Setpoint</th></tr>
+    </thead>
+    <tbody id="cycles-body">
+      <tr><td colspan="4" style="color:var(--text-muted);text-align:center">Loading…</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

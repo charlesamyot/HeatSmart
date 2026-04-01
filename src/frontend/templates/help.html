@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}Help — EcoNet Monitor{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Help</h1>
+
+<div style="display:grid;gap:1rem;max-width:800px">
+
+  <details class="card" open>
+    <summary class="help-summary">What is this?</summary>
+    <div class="help-body">
+      <p>A local web app that connects to your <strong>Rheem EcoNet heat pump water heater</strong>
+      through the same cloud backend the official EcoNet phone app uses. It gives you more granular usage tracking,
+      TOU cost breakdowns for Seattle City Light rates, and schedule optimization to save money.</p>
+      <p style="color:var(--text-muted);margin-top:.5rem;font-size:.85rem">
+        Your data stays on your computer. The only external communication is with Rheem's ClearBlade servers
+        (the same ones the phone app talks to).</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">Dashboard</summary>
+    <div class="help-body">
+      <p>At-a-glance view of your water heater. Shows hot water availability, setpoint, operating mode, and running status.</p>
+      <ul>
+        <li><strong>Setpoint +/−</strong> — adjusts target temperature via MQTT (110–140°F)</li>
+        <li><strong>Mode popover</strong> — click to open, select a mode. Changes push to device instantly via MQTT.</li>
+        <li><strong>Energy chart</strong> — hourly bars colored by TOU rate tier</li>
+        <li><strong>Refresh button</strong> — forces an immediate poll from EcoNet cloud</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">Schedule</summary>
+    <div class="help-body">
+      <p>Set up to 4 temperature/mode changes per day, per day of the week.</p>
+      <ul>
+        <li><strong>Timeline</strong> — colored blocks across 24 hours. Click to edit. Toggle TOU overlay to see rate windows.</li>
+        <li><strong>List</strong> — table view with time, setpoint, mode.</li>
+        <li><strong>Week</strong> — all 7 days stacked. Click a day to edit it.</li>
+        <li><strong>Copy to…</strong> — copy one day's schedule to other days.</li>
+        <li><strong>Optimizer</strong> — analyzes TOU rates and suggests a cost-saving schedule with estimated monthly/yearly savings.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">History</summary>
+    <div class="help-body">
+      <p>Historical energy consumption and heating cycles.</p>
+      <ul>
+        <li><strong>Hourly chart</strong> — today/yesterday kWh per hour, colored by TOU tier</li>
+        <li><strong>Daily chart</strong> — stacked bars (peak/mid/off-peak) with cost line overlay</li>
+        <li><strong>Export</strong> — download CSV at hourly or daily granularity, up to 2 years</li>
+      </ul>
+      <p style="color:var(--text-muted);font-size:.85rem;margin-top:.5rem">
+        <strong>Note:</strong> Energy data for Gen5 firmware is tracked from heater state snapshots (running state over time),
+        not from a dedicated energy API. The EcoNet REST energy endpoints are not available for this firmware version.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">Settings</summary>
+    <div class="help-body">
+      <ul>
+        <li><strong>Device card</strong> — shows location, model, firmware, MQTT status, serial/MAC, health</li>
+        <li><strong>EcoNet Account</strong> — same credentials as your phone app. Show/hide password supported.</li>
+        <li><strong>Comfort Preferences</strong> — preferred setpoint, minimum temp, max recovery time (used by optimizer)</li>
+        <li><strong>TOU heatmap</strong> — visual 7-day × 24-hour grid. Click "Edit Rates" to customize tiers.</li>
+        <li><strong>Debug tools</strong> — expand the drawer to inspect MQTT status, recent messages, raw device data</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">TOU Rates (Seattle City Light)</summary>
+    <div class="help-body">
+      <table class="data-table">
+        <thead><tr><th>Tier</th><th>Hours</th><th>Rate</th></tr></thead>
+        <tbody>
+          <tr><td><span style="color:var(--tou-off);font-weight:600">Off-Peak</span></td><td>Midnight – 6 AM, every day</td><td>$0.0837/kWh</td></tr>
+          <tr><td><span style="color:var(--tou-mid);font-weight:600">Mid-Peak</span></td><td>6 AM – 5 PM &amp; 9 PM – midnight (Mon–Sat); all day Sun/holidays</td><td>$0.1465/kWh</td></tr>
+          <tr><td><span style="color:var(--tou-peak);font-weight:600">Peak</span></td><td>5 PM – 9 PM, Mon–Sat (not holidays)</td><td>$0.1674/kWh</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:.85rem;color:var(--text-muted);margin-top:.5rem">Base service charge: $0.4103/day. The optimizer pre-heats during off-peak (50% cheaper than peak) and coasts on stored heat during peak.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">Operating Modes</summary>
+    <div class="help-body">
+      <table class="data-table">
+        <thead><tr><th>Mode</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600">Energy Saving</td><td>Heat pump primary. Most efficient for daily use.</td></tr>
+          <tr><td style="font-weight:600">Heat Pump Only</td><td>Compressor only, no backup element. Slowest but cheapest.</td></tr>
+          <tr><td style="font-weight:600">High Demand</td><td>Both heat pump + element. Fast recovery, higher cost.</td></tr>
+          <tr><td style="font-weight:600">Electric</td><td>Element only. Fastest but most expensive.</td></tr>
+          <tr><td style="font-weight:600">Vacation</td><td>Low-power standby while away.</td></tr>
+          <tr><td style="font-weight:600">Off</td><td>Disabled entirely.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">How it connects</summary>
+    <div class="help-body">
+      <p>Communication uses <strong>MQTT</strong> (real-time messaging) to Rheem's ClearBlade IoT platform — the same
+      backend the EcoNet phone app uses. The connection icon in the nav bar shows:</p>
+      <ul>
+        <li><span style="color:var(--success);font-weight:600">Green link</span> — connected. Hover for device summary.</li>
+        <li><span style="color:var(--danger);font-weight:600">Red</span> — disconnected. Click to go to Settings.</li>
+      </ul>
+      <p style="margin-top:.5rem">Mode changes and setpoint adjustments are sent via MQTT and apply within seconds.
+      State is also polled every 5 minutes as a fallback. The REST energy/schedule APIs are not available for Gen5 firmware —
+      all data flows through MQTT.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">Technical</summary>
+    <div class="help-body">
+      <table class="data-table">
+        <tbody>
+          <tr><td style="color:var(--text-muted);width:160px">Backend</td><td>Python 3.9 / FastAPI / SQLite</td></tr>
+          <tr><td style="color:var(--text-muted)">Frontend</td><td>Vanilla HTML/JS + Chart.js</td></tr>
+          <tr><td style="color:var(--text-muted)">Device API</td><td>ClearBlade MQTT (port 1884, TLS)</td></tr>
+          <tr><td style="color:var(--text-muted)">State poll</td><td>Every 5 min (REST fallback)</td></tr>
+          <tr><td style="color:var(--text-muted)">Control</td><td>MQTT publish to device/desired</td></tr>
+          <tr><td style="color:var(--text-muted)">Database</td><td>config/econet_data.db</td></tr>
+          <tr><td style="color:var(--text-muted)">Credentials</td><td>config/.env (file perms 0600)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <!-- Feedback -->
+  <details class="card">
+    <summary class="help-summary">Feedback &amp; Support</summary>
+    <div class="help-body">
+      <p>Found a bug? Have a feature request? We'd love to hear from you.</p>
+      <div style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
+        <a href="https://github.com/charlesolivieramyot/heatsmart/issues" target="_blank" class="btn btn--outline btn--sm" style="text-decoration:none">Report an Issue</a>
+        <a href="mailto:charles@heatsmart.app?subject=HeatSmart%20Feedback" class="btn btn--outline btn--sm" style="text-decoration:none">Email Feedback</a>
+      </div>
+    </div>
+  </details>
+
+  <!-- Legal -->
+  <details class="card">
+    <summary class="help-summary">Legal &amp; Disclaimers</summary>
+    <div class="help-body">
+      <p style="font-weight:600;margin-bottom:.5rem">Independent Product Notice</p>
+      <p style="font-size:.82rem;color:var(--text-muted)">
+        HeatSmart is an independent product and is not affiliated with, endorsed by, or sponsored by
+        Rheem Manufacturing Company, EcoNet, or ClearBlade, Inc. "Rheem" and "EcoNet" are registered
+        trademarks of Rheem Manufacturing Company. "ClearBlade" is a registered trademark of ClearBlade, Inc.
+        All trademarks are the property of their respective owners.
+      </p>
+
+      <p style="font-weight:600;margin-top:1rem;margin-bottom:.5rem">Device Safety</p>
+      <p style="font-size:.82rem;color:var(--text-muted)">
+        HeatSmart allows remote control of your water heater, including temperature adjustments and mode changes.
+        Improper settings may result in scalding hot water, Legionella bacteria growth (below 120°F),
+        equipment damage, or increased energy costs. You are solely responsible for ensuring safe operation
+        of your water heater. Always follow your manufacturer's safety guidelines.
+      </p>
+
+      <p style="font-weight:600;margin-top:1rem;margin-bottom:.5rem">Credential Storage</p>
+      <p style="font-size:.82rem;color:var(--text-muted)">
+        HeatSmart stores your EcoNet credentials in encrypted form (AES-256) to connect to your account
+        on your behalf. While we employ industry-standard encryption, no system is completely secure.
+        By providing your credentials, you acknowledge and accept this risk. You may request deletion
+        of your credentials at any time.
+      </p>
+
+      <p style="font-weight:600;margin-top:1rem;margin-bottom:.5rem">Energy Savings</p>
+      <p style="font-size:.82rem;color:var(--text-muted)">
+        Energy savings estimates are approximations based on your utility rate structure, usage patterns,
+        and device capabilities. Actual savings may vary significantly. HeatSmart does not guarantee
+        any specific level of energy savings.
+      </p>
+
+      <p style="font-weight:600;margin-top:1rem;margin-bottom:.5rem">No Warranty</p>
+      <p style="font-size:.82rem;color:var(--text-muted)">
+        HEATSMART IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+        INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+        OR NON-INFRINGEMENT. USE AT YOUR OWN RISK.
+      </p>
+
+      <p style="font-weight:600;margin-top:1rem;margin-bottom:.5rem">License</p>
+      <p style="font-size:.82rem;color:var(--text-muted)">
+        HeatSmart is licensed under the Business Source License 1.1 (BSL 1.1).
+        Free for personal and internal business use. Running a competing commercial water heater
+        monitoring service requires a commercial license. The source code converts to Apache 2.0
+        on April 1, 2030.
+      </p>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-top:.5rem">
+        This software includes code derived from
+        <a href="https://github.com/w1ll1am23/pyeconet" target="_blank" style="color:var(--accent)">pyeconet</a>
+        by William Scanlon (MIT License).
+      </p>
+    </div>
+  </details>
+
+  <!-- About -->
+  <details class="card">
+    <summary class="help-summary">About HeatSmart</summary>
+    <div class="help-body">
+      <p><strong>HeatSmart</strong> — Smart heating, smart savings.</p>
+      <p style="color:var(--text-muted);margin-top:.5rem">
+        Built by Charles Amyot in Seattle, WA. Designed to help homeowners
+        reduce water heating costs with time-of-use rate optimization.
+      </p>
+      <table class="data-table" style="margin-top:.75rem">
+        <tbody>
+          <tr><td style="color:var(--text-muted)">Version</td><td>1.0.0</td></tr>
+          <tr><td style="color:var(--text-muted)">License</td><td>BSL 1.1</td></tr>
+          <tr><td style="color:var(--text-muted)">Source</td><td><a href="https://github.com/charlesolivieramyot/heatsmart" style="color:var(--accent)">GitHub</a></td></tr>
+          <tr><td style="color:var(--text-muted)">Contact</td><td>charles@heatsmart.app</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.help-summary {
+  font-weight: 600;
+  font-size: .95rem;
+  cursor: pointer;
+  padding: .15rem 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.help-summary::before {
+  content: '▸';
+  font-size: .8rem;
+  color: var(--text-muted);
+  transition: transform .15s;
+}
+details[open] > .help-summary::before { transform: rotate(90deg); }
+.help-summary::-webkit-details-marker { display: none; }
+.help-body {
+  margin-top: .75rem;
+  font-size: .88rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+.help-body ul { padding-left: 1.5rem; }
+.help-body li { margin-bottom: .25rem; }
+.help-body p + p { margin-top: .5rem; }
+</style>
+{% endblock %}

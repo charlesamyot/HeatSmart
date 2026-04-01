@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>HeatSmart — Sign In</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script>
+    (function() {
+      const saved = localStorage.getItem('econet-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+  <style>
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.15);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+    }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .login-logo h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-top: .5rem;
+    }
+    .login-logo p {
+      color: var(--text-muted);
+      font-size: .9rem;
+      margin-top: .25rem;
+    }
+    .login-divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      color: var(--text-muted);
+      font-size: .82rem;
+    }
+    .login-divider::before, .login-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .btn-google {
+      width: 100%;
+      padding: .65rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      transition: background .15s;
+    }
+    .btn-google:hover { background: var(--accent-light); }
+  </style>
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <div style="font-size:2.5rem">🔥</div>
+        <h1>HeatSmart</h1>
+        <p>Smart heating, smart savings</p>
+      </div>
+
+      <!-- Email sign in -->
+      <div class="form-group">
+        <label class="form-label" for="login-email">Email</label>
+        <input type="email" id="login-email" class="form-input" placeholder="you@example.com" autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="login-password">Password</label>
+        <input type="password" id="login-password" class="form-input" placeholder="Password">
+      </div>
+      <button class="btn btn--primary" style="width:100%;justify-content:center" onclick="signInEmail()">
+        Sign In
+      </button>
+
+      <div style="text-align:center;margin-top:.75rem">
+        <button style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:.85rem"
+                onclick="signUpEmail()">
+          Don't have an account? Sign up
+        </button>
+      </div>
+
+      <div class="login-divider">or</div>
+
+      <!-- Magic link -->
+      <button class="btn-google" onclick="signInMagicLink()">
+        ✉ Sign in with Magic Link
+      </button>
+
+      <div id="login-message" style="display:none;margin-top:1rem;padding:.75rem;border-radius:var(--radius);font-size:.85rem;text-align:center"></div>
+    </div>
+  </div>
+
+  <script src="/static/js/auth.js"></script>
+</body>
+</html>

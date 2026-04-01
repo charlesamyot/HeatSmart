@@ -1,0 +1,53 @@
+# Seattle City Light — Time-of-Use Rate Schedule (Seattle zone)
+# Rates effective when TOU program launches
+# Source: Seattle City Light TOU rate announcement
+
+utility: Seattle City Light
+zone: Seattle
+base_service_charge_per_day: 0.4103  # $/day
+
+rates:
+  - name: peak
+    rate_per_kwh: 0.1674
+    # Mon-Sat (except observed holidays): 5PM-9PM
+    periods:
+      - days: [0, 1, 2, 3, 4, 5]   # Mon=0 ... Sat=5
+        start_hour: 17               # 5 PM
+        end_hour: 21                 # 9 PM
+        holiday_exception: true      # reverts to mid-peak on holidays
+
+  - name: mid_peak
+    rate_per_kwh: 0.1465
+    # Mon-Sat: 6AM-5PM and 9PM-midnight
+    # Sun and holidays: 6AM-midnight all day
+    periods:
+      - days: [0, 1, 2, 3, 4, 5]
+        start_hour: 6
+        end_hour: 17
+      - days: [0, 1, 2, 3, 4, 5]
+        start_hour: 21
+        end_hour: 24
+      - days: [6]                    # Sunday
+        start_hour: 6
+        end_hour: 24
+      # holidays handled in code: treat as Sunday schedule
+
+  - name: off_peak
+    rate_per_kwh: 0.0837
+    # Every day: midnight-6AM
+    periods:
+      - days: [0, 1, 2, 3, 4, 5, 6]
+        start_hour: 0
+        end_hour: 6
+
+# US Federal observed holidays (month, day) — New Year's, MLK, Presidents', Memorial,
+# Juneteenth, Independence, Labor, Columbus, Veterans, Thanksgiving, Christmas
+holidays:
+  - {month: 1,  day: 1}    # New Year's Day
+  - {month: 6,  day: 19}   # Juneteenth
+  - {month: 7,  day: 4}    # Independence Day
+  - {month: 11, day: 11}   # Veterans Day
+  - {month: 12, day: 25}   # Christmas Day
+  # Floating holidays handled in code: MLK (3rd Mon Jan), Presidents (3rd Mon Feb),
+  # Memorial (last Mon May), Labor (1st Mon Sep), Columbus (2nd Mon Oct),
+  # Thanksgiving (4th Thu Nov)

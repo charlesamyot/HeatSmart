@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+{% block title %}Settings — EcoNet Monitor{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Settings</h1>
+
+<!-- Device info card — full width -->
+<div class="card section" id="device-card" style="display:none">
+  <div class="section-header">
+    <span class="section-title" id="device-title">Water Heater</span>
+    <span id="device-connected" class="badge badge--unknown">—</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem 1.5rem">
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Location</div>
+      <div id="device-location" style="font-weight:600;margin-top:.15rem">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Model / Type</div>
+      <div id="device-type" style="font-weight:600;margin-top:.15rem">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Status</div>
+      <div id="device-running" style="font-weight:600;margin-top:.15rem">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Firmware</div>
+      <div id="device-firmware" style="font-size:.85rem;margin-top:.15rem">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">MQTT</div>
+      <div id="device-mqtt" style="font-size:.85rem;margin-top:.15rem">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Account</div>
+      <div id="device-account" style="font-size:.85rem;margin-top:.15rem;word-break:break-all">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Serial Number</div>
+      <div id="device-serial" style="font-size:.82rem;margin-top:.15rem;font-family:monospace">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">MAC Address</div>
+      <div id="device-mac" style="font-size:.82rem;margin-top:.15rem;font-family:monospace">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">ClearBlade ID</div>
+      <div id="device-cbid" style="font-size:.82rem;margin-top:.15rem;font-family:monospace">—</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+
+  <!-- EcoNet credentials -->
+  <div class="card">
+    <div class="section-title" style="margin-bottom:1rem">EcoNet Account</div>
+    <div class="form-group">
+      <label class="form-label" for="cred-email">Email</label>
+      <input type="email" id="cred-email" class="form-input" placeholder="your@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="cred-password">Password</label>
+      <div class="input-group">
+        <input type="password" id="cred-password" class="form-input" placeholder="Enter password">
+        <button class="btn btn--outline btn--sm" type="button" onclick="togglePasswordVisibility()" id="pw-toggle-btn"
+                title="Show/hide password" style="border-left:none">Show</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+      <button class="btn btn--primary" onclick="saveCredentials()">Save &amp; Connect</button>
+      <span id="cred-status" class="badge badge--unknown" style="display:none"></span>
+    </div>
+    <div id="cred-error" class="alert alert--error" style="display:none;margin-top:.75rem"></div>
+  </div>
+
+  <!-- System status -->
+  <div class="card">
+    <div class="section-title" style="margin-bottom:1rem">System Status</div>
+    <table class="data-table">
+      <tbody>
+        <tr><td style="color:var(--text-muted)">Connection</td>
+            <td><span id="sys-connected" class="badge badge--unknown">—</span></td></tr>
+        <tr><td style="color:var(--text-muted)">MQTT</td>
+            <td><span id="sys-mqtt" class="badge badge--unknown">—</span></td></tr>
+        <tr><td style="color:var(--text-muted)">Last poll</td>
+            <td id="sys-last-poll">—</td></tr>
+        <tr><td style="color:var(--text-muted)">Last error</td>
+            <td id="sys-error" style="color:var(--danger);font-size:.82rem">—</td></tr>
+      </tbody>
+    </table>
+    <button class="btn btn--outline btn--sm" style="margin-top:.75rem" onclick="loadStatus()">Refresh</button>
+  </div>
+
+</div>
+
+<!-- Comfort preferences — full width, 2-column layout -->
+<div class="card section" style="margin-top:1.25rem">
+  <div class="section-title" style="margin-bottom:1rem">Comfort Preferences</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 2rem">
+    <div class="form-group">
+      <label class="form-label">Preferred setpoint (°F)</label>
+      <input type="number" id="pref-setpoint" class="form-input" min="110" max="140" value="120">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Minimum acceptable temp (°F)</label>
+      <input type="number" id="pref-min-temp" class="form-input" min="90" max="130" value="110">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Max recovery time (minutes)</label>
+      <input type="number" id="pref-recovery" class="form-input" min="10" max="240" value="60">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Away setpoint (°F, optional)</label>
+      <input type="number" id="pref-away" class="form-input" min="90" max="130" placeholder="Leave blank to disable">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Your timezone</label>
+      <select class="form-select" id="pref-timezone">
+        <option value="America/Los_Angeles">Pacific (PT)</option>
+        <option value="America/Denver">Mountain (MT)</option>
+        <option value="America/Chicago">Central (CT)</option>
+        <option value="America/New_York">Eastern (ET)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Device registered timezone</label>
+      <select class="form-select" id="pref-device-tz">
+        <option value="America/New_York">Eastern (ET) — ClearBlade default</option>
+        <option value="America/Chicago">Central (CT)</option>
+        <option value="America/Denver">Mountain (MT)</option>
+        <option value="America/Los_Angeles">Pacific (PT)</option>
+      </select>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem">
+        ClearBlade registers devices as ET by default. If your hours look shifted, adjust this.
+      </div>
+    </div>
+  </div>
+  <button class="btn btn--primary" onclick="savePreferences()">Save Preferences</button>
+  <span id="pref-status" style="display:none;margin-left:.75rem;font-size:.85rem;color:var(--success)">Saved</span>
+</div>
+
+<!-- TOU Rate Schedule — full width -->
+<div class="card section" style="margin-top:1.25rem">
+  <div class="section-header">
+    <span class="section-title">TOU Rate Schedule</span>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn btn--outline btn--sm" onclick="toggleTouEditor()">Edit Rates</button>
+    </div>
+  </div>
+
+  <!-- Week heatmap -->
+  <div class="tou-legend" style="margin-bottom:.75rem">
+    <span><span class="tou-swatch off"></span>Off-Peak</span>
+    <span><span class="tou-swatch mid"></span>Mid-Peak</span>
+    <span><span class="tou-swatch peak"></span>Peak</span>
+  </div>
+  <div id="tou-heatmap" class="tou-heatmap" style="margin-bottom:1rem">
+    <!-- Rendered by JS -->
+  </div>
+
+  <!-- Editable rate table (hidden by default) -->
+  <div id="tou-editor" style="display:none">
+    <div class="section-title" style="margin:.75rem 0 .5rem">Edit Rate Tiers</div>
+    <table class="data-table" id="tou-edit-table">
+      <thead>
+        <tr><th>Tier</th><th>Start Hour</th><th>End Hour</th><th>$/kWh</th><th>Days</th><th>Holiday?</th><th></th></tr>
+      </thead>
+      <tbody id="tou-edit-body"></tbody>
+    </table>
+    <div style="margin-top:.75rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <button class="btn btn--outline btn--sm" onclick="addTouRow()">+ Add Tier</button>
+      <button class="btn btn--primary btn--sm" onclick="saveTouRates()">Save Rates</button>
+      <button class="btn btn--outline btn--sm" onclick="toggleTouEditor()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Debug tools — collapsible drawer -->
+<div class="card section" style="margin-top:1.25rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleDebugPanel()">
+    <span class="section-title">Advanced / Debug Tools</span>
+    <span id="debug-arrow" style="font-size:.8rem;color:var(--text-muted);transition:transform .2s">&#9654;</span>
+  </div>
+  <div id="debug-panel" style="display:none;margin-top:.75rem">
+    <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem">
+      Probe the EcoNet ClearBlade API directly. Useful for troubleshooting connection or data issues.
+    </p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem">
+      <button class="btn btn--outline btn--sm" onclick="debugFetch('/api/debug/mqtt-status')">MQTT Status</button>
+      <button class="btn btn--outline btn--sm" onclick="debugFetch('/api/debug/mqtt-messages')">MQTT Messages</button>
+      <button class="btn btn--outline btn--sm" onclick="debugFetch('/api/debug/equipment')">Equipment</button>
+      <button class="btn btn--outline btn--sm" onclick="debugFetch('/api/debug/energy-test')">Energy Today</button>
+      <button class="btn btn--outline btn--sm" onclick="debugFetch('/api/debug/energy-range')">Energy 7d</button>
+      <button class="btn btn--outline btn--sm" onclick="debugFetch('/api/debug/raw')">Raw Device</button>
+      <button class="btn btn--outline btn--sm" onclick="debugFetch('/api/config/status')">Config Status</button>
+    </div>
+    <div style="position:relative">
+      <button class="btn btn--outline btn--sm" style="position:absolute;top:.35rem;right:.35rem;z-index:1"
+              onclick="copyDebugOutput()" id="debug-copy-btn">Copy</button>
+      <pre id="debug-output" style="background:var(--surface-alt);padding:.75rem;padding-right:5rem;border-radius:var(--radius);font-size:.72rem;max-height:400px;overflow:auto;white-space:pre-wrap;word-break:break-all">Click a debug button above to query the API</pre>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+let touRatesCache = [];
+
+function pad(h) { return String(h).padStart(2,'0'); }
+function formatDays(str) { return str.split(',').map(d => DAY_NAMES[+d] || d).join(', '); }
+
+// ---- Password show/hide ----
+function togglePasswordVisibility() {
+  const input = document.getElementById('cred-password');
+  const btn = document.getElementById('pw-toggle-btn');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = 'Hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = 'Show';
+  }
+}
+
+// ---- Status ----
+async function loadStatus() {
+  const r = await fetch('/api/config/status');
+  const d = await r.json();
+  document.getElementById('sys-connected').className = d.connected ? 'badge badge--ok' : 'badge badge--error';
+  document.getElementById('sys-connected').textContent = d.connected ? 'Connected' : 'Disconnected';
+  document.getElementById('sys-mqtt').className = d.mqtt_connected ? 'badge badge--ok' : 'badge badge--warn';
+  document.getElementById('sys-mqtt').textContent = d.mqtt_connected ? 'Live' : 'Polling';
+  document.getElementById('sys-last-poll').textContent = d.last_poll ? new Date(d.last_poll).toLocaleTimeString() : '—';
+  document.getElementById('sys-error').textContent = d.last_error || 'None';
+}
+
+// ---- Credentials ----
+async function saveCredentials() {
+  const email = document.getElementById('cred-email').value.trim();
+  const password = document.getElementById('cred-password').value;
+  const statusEl = document.getElementById('cred-status');
+  const errorEl = document.getElementById('cred-error');
+  errorEl.style.display = 'none';
+  if (!email || !password) { showToast('Email and password are required.', 'warn'); return; }
+  statusEl.style.display = 'inline-block';
+  statusEl.className = 'badge badge--unknown';
+  statusEl.textContent = 'Connecting…';
+  try {
+    const r = await fetch('/api/config/credentials', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email, password}),
+    });
+    if (r.ok) {
+      statusEl.className = 'badge badge--ok';
+      statusEl.textContent = 'Connected';
+      showToast('Connected to EcoNet.', 'success');
+    } else {
+      const d = await r.json();
+      statusEl.className = 'badge badge--error';
+      statusEl.textContent = 'Failed';
+      errorEl.textContent = d.detail || 'Authentication failed';
+      errorEl.style.display = 'block';
+    }
+  } catch (e) {
+    statusEl.className = 'badge badge--error';
+    statusEl.textContent = 'Error';
+  }
+}
+
+// ---- Preferences ----
+async function loadPreferences() {
+  const r = await fetch('/api/config/preferences');
+  const d = await r.json();
+  document.getElementById('pref-setpoint').value = d.preferred_setpoint;
+  document.getElementById('pref-min-temp').value = d.min_acceptable_temp;
+  document.getElementById('pref-recovery').value = d.max_recovery_minutes;
+  if (d.away_setpoint) document.getElementById('pref-away').value = d.away_setpoint;
+}
+
+async function savePreferences() {
+  const body = {
+    preferred_setpoint: +document.getElementById('pref-setpoint').value,
+    min_acceptable_temp: +document.getElementById('pref-min-temp').value,
+    max_recovery_minutes: +document.getElementById('pref-recovery').value,
+    away_setpoint: document.getElementById('pref-away').value ? +document.getElementById('pref-away').value : null,
+  };
+  const r = await fetch('/api/config/preferences', {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+  });
+  if (r.ok) { showToast('Preferences saved.', 'success'); }
+  else { showToast('Failed to save preferences.', 'error'); }
+}
+
+// ---- TOU Rates ----
+async function loadTouRates() {
+  const r = await fetch('/api/config/tou-rates');
+  touRatesCache = await r.json();
+  renderTouHeatmap(touRatesCache);
+}
+
+function getTierForHour(hour, dow, rates) {
+  // dow: 0=Mon, 6=Sun
+  for (const rate of rates) {
+    const days = rate.days_of_week.split(',').map(Number);
+    if (days.includes(dow) && hour >= rate.start_hour && hour < rate.end_hour) {
+      return { tier: rate.name, rate: rate.rate_per_kwh };
+    }
+  }
+  return { tier: 'off_peak', rate: 0.0837 };
+}
+
+function renderTouHeatmap(rates) {
+  const container = document.getElementById('tou-heatmap');
+  let html = '<div class="tou-heatmap-label"></div>'; // empty corner
+  // Hour headers
+  for (let h = 0; h < 24; h++) {
+    html += `<div class="tou-heatmap-header">${h}</div>`;
+  }
+  // Each day row
+  for (let dow = 0; dow < 7; dow++) {
+    html += `<div class="tou-heatmap-label">${DAY_NAMES[dow]}</div>`;
+    for (let h = 0; h < 24; h++) {
+      const { tier, rate } = getTierForHour(h, dow, rates);
+      const tierLabel = {peak:'Peak',mid_peak:'Mid',off_peak:'Off'}[tier] || tier;
+      html += `<div class="tou-cell ${tier}" title="${DAY_NAMES[dow]} ${pad(h)}:00 — ${tierLabel} $${rate.toFixed(4)}/kWh"></div>`;
+    }
+  }
+  container.innerHTML = html;
+}
+
+// ---- TOU editor ----
+let touEditorVisible = false;
+function toggleTouEditor() {
+  touEditorVisible = !touEditorVisible;
+  document.getElementById('tou-editor').style.display = touEditorVisible ? 'block' : 'none';
+  if (touEditorVisible) renderTouEditTable();
+}
+
+function renderTouEditTable() {
+  const tbody = document.getElementById('tou-edit-body');
+  tbody.innerHTML = touRatesCache.map((r, i) => `
+    <tr data-idx="${i}">
+      <td><select class="form-select" style="width:auto;font-size:.82rem" data-field="name">
+        <option value="off_peak" ${r.name==='off_peak'?'selected':''}>Off-Peak</option>
+        <option value="mid_peak" ${r.name==='mid_peak'?'selected':''}>Mid-Peak</option>
+        <option value="peak" ${r.name==='peak'?'selected':''}>Peak</option>
+      </select></td>
+      <td><input type="number" class="form-input" style="width:60px;font-size:.82rem" min="0" max="23" value="${r.start_hour}" data-field="start_hour"></td>
+      <td><input type="number" class="form-input" style="width:60px;font-size:.82rem" min="1" max="24" value="${r.end_hour}" data-field="end_hour"></td>
+      <td><input type="number" class="form-input" style="width:90px;font-size:.82rem" min="0" step="0.0001" value="${r.rate_per_kwh}" data-field="rate_per_kwh"></td>
+      <td><input type="text" class="form-input" style="width:100px;font-size:.82rem" value="${r.days_of_week}" data-field="days_of_week" title="0=Mon,1=Tue,...6=Sun"></td>
+      <td><input type="checkbox" ${r.holiday_exception?'checked':''} data-field="holiday_exception"></td>
+      <td><button class="btn btn--danger btn--sm" onclick="removeTouRow(${i})">X</button></td>
+    </tr>
+  `).join('');
+}
+
+function addTouRow() {
+  touRatesCache.push({name:'off_peak', start_hour:0, end_hour:6, rate_per_kwh:0.0837, days_of_week:'0,1,2,3,4,5,6', holiday_exception:false});
+  renderTouEditTable();
+}
+
+function removeTouRow(idx) {
+  touRatesCache.splice(idx, 1);
+  renderTouEditTable();
+}
+
+function collectTouEdits() {
+  const rows = document.querySelectorAll('#tou-edit-body tr');
+  return Array.from(rows).map(row => ({
+    name: row.querySelector('[data-field="name"]').value,
+    start_hour: +row.querySelector('[data-field="start_hour"]').value,
+    end_hour: +row.querySelector('[data-field="end_hour"]').value,
+    rate_per_kwh: +row.querySelector('[data-field="rate_per_kwh"]').value,
+    days_of_week: row.querySelector('[data-field="days_of_week"]').value.trim(),
+    holiday_exception: row.querySelector('[data-field="holiday_exception"]').checked,
+  }));
+}
+
+async function saveTouRates() {
+  const rates = collectTouEdits();
+  const r = await fetch('/api/config/tou-rates', {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(rates),
+  });
+  if (r.ok) {
+    touRatesCache = await r.json();
+    renderTouHeatmap(touRatesCache);
+    toggleTouEditor();
+    showToast('TOU rates saved.', 'success');
+  } else {
+    showToast('Failed to save TOU rates.', 'error');
+  }
+}
+
+// ---- Debug panel ----
+function toggleDebugPanel() {
+  const panel = document.getElementById('debug-panel');
+  const arrow = document.getElementById('debug-arrow');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  arrow.style.transform = open ? 'rotate(90deg)' : '';
+}
+
+async function debugFetch(url) {
+  const output = document.getElementById('debug-output');
+  output.textContent = 'Loading...';
+  try {
+    const r = await fetchWithTimeout(url, {}, 20000);
+    const data = await r.json();
+    output.textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    output.textContent = `Error: ${e.message}`;
+  }
+}
+
+async function debugPost(url) {
+  const output = document.getElementById('debug-output');
+  output.textContent = 'Sending...';
+  try {
+    const r = await fetchWithTimeout(url, { method: 'POST' }, 20000);
+    const data = await r.json();
+    output.textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    output.textContent = `Error: ${e.message}`;
+  }
+}
+
+function copyDebugOutput() {
+  const text = document.getElementById('debug-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('debug-copy-btn');
+    btn.textContent = 'Copied';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+// ---- Device info ----
+async function loadDeviceInfo() {
+  try {
+    const r = await fetch('/api/device');
+    if (!r.ok) { document.getElementById('device-card').style.display = 'none'; return; }
+    const d = await r.json();
+    document.getElementById('device-card').style.display = 'block';
+    document.getElementById('device-title').textContent = d.name || 'Water Heater';
+    const connBadge = document.getElementById('device-connected');
+    connBadge.textContent = d.connected ? 'Connected' : 'Offline';
+    connBadge.className = d.connected ? 'badge badge--ok' : 'badge badge--error';
+    const loc = d.location;
+    document.getElementById('device-location').textContent = loc ? `${loc.city}, ${loc.state} ${loc.zipcode}` : '—';
+    const typeLabels = {heatpumpWaterHeaterGen5: 'Heat Pump WH (Gen 5)', WH: 'Water Heater'};
+    document.getElementById('device-type').textContent = typeLabels[d.equipment_type] || d.equipment_type || d.device_type || '—';
+    document.getElementById('device-running').innerHTML = d.running
+      ? `<span style="color:var(--success)">${d.running_state || 'Running'}</span>`
+      : '<span style="color:var(--text-muted)">Idle</span>';
+    document.getElementById('device-firmware').textContent = d.firmware || '—';
+    document.getElementById('device-mqtt').innerHTML = d.mqtt_connected
+      ? '<span style="color:var(--success)">Live</span>'
+      : '<span style="color:var(--warn)">Polling only</span>';
+    document.getElementById('device-account').textContent = d.econet_email || '—';
+    document.getElementById('device-serial').textContent = d.device_id || '—';
+    document.getElementById('device-mac').textContent = d.mac_address || '—';
+    document.getElementById('device-cbid').textContent = d.device_name || '—';
+  } catch (e) {
+    document.getElementById('device-card').style.display = 'none';
+  }
+}
+
+// ---- Init ----
+loadDeviceInfo();
+loadStatus();
+loadPreferences();
+loadTouRates();
+setInterval(loadStatus, 30000);
+</script>
+{% endblock %}

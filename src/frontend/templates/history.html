@@ -1,0 +1,660 @@
+{% extends "base.html" %}
+{% block title %}History — EcoNet Monitor{% endblock %}
+
+{% block content %}
+<h1 class="page-title">History</h1>
+
+<!-- Unified toolbar -->
+<div class="card section" style="padding:.75rem 1rem">
+  <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+    <div class="tabs" id="granularity-tabs">
+      <button class="tab-btn active" onclick="setGranularity('hourly', this)">Hourly</button>
+      <button class="tab-btn" onclick="setGranularity('6hr', this)">6-Hour</button>
+      <button class="tab-btn" onclick="setGranularity('daily', this)">Daily</button>
+      <button class="tab-btn" onclick="setGranularity('weekly', this)">Weekly</button>
+      <button class="tab-btn" onclick="setGranularity('monthly', this)">Monthly</button>
+    </div>
+    <div style="height:20px;border-left:1px solid var(--border)"></div>
+    <div class="tabs" id="range-tabs">
+      <button class="tab-btn active" onclick="setRange('day', this)">Today</button>
+      <button class="tab-btn" onclick="setRange('yesterday', this)">Yesterday</button>
+      <button class="tab-btn" onclick="setRange('week', this)">7d</button>
+      <button class="tab-btn" onclick="setRange('month', this)">30d</button>
+      <button class="tab-btn" onclick="setRange('quarter', this)">90d</button>
+      <button class="tab-btn" onclick="setRange('year', this)">1y</button>
+    </div>
+    <div style="height:20px;border-left:1px solid var(--border)"></div>
+    <div class="tou-legend" style="margin:0">
+      <span><span class="tou-swatch off"></span>Off-Peak</span>
+      <span><span class="tou-swatch mid"></span>Mid-Peak</span>
+      <span><span class="tou-swatch peak"></span>Peak</span>
+    </div>
+  </div>
+</div>
+
+<!-- Stats bar (collapsible) -->
+<details class="section" open>
+<summary class="section-summary">Overview</summary>
+<div class="status-grid" id="stats-bar" style="grid-template-columns:repeat(5,1fr)">
+  <div class="card" style="padding:.75rem 1rem">
+    <div class="card-title">Total</div>
+    <div style="font-size:1.3rem;font-weight:700" id="stat-total-kwh">—</div>
+    <div class="card-sub" id="stat-total-cost">—</div>
+  </div>
+  <div class="card" style="padding:.75rem 1rem">
+    <div class="card-title">Avg / Day</div>
+    <div style="font-size:1.3rem;font-weight:700" id="stat-avg-kwh">—</div>
+    <div class="card-sub" id="stat-avg-cost">—</div>
+  </div>
+  <div class="card" style="padding:.75rem 1rem">
+    <div class="card-title">Peak Day</div>
+    <div style="font-size:1.3rem;font-weight:700;color:var(--tou-peak)" id="stat-max">—</div>
+    <div class="card-sub" id="stat-max-date">—</div>
+  </div>
+  <div class="card" style="padding:.75rem 1rem">
+    <div class="card-title">Low Day</div>
+    <div style="font-size:1.3rem;font-weight:700;color:var(--tou-off)" id="stat-min">—</div>
+    <div class="card-sub" id="stat-min-date">—</div>
+  </div>
+  <div class="card" style="padding:.75rem 1rem">
+    <div class="card-title">Off-Peak %</div>
+    <div style="font-size:1.3rem;font-weight:700;color:var(--success)" id="stat-offpeak-pct">—</div>
+    <div class="card-sub">of total kWh</div>
+  </div>
+</div>
+
+</details>
+
+<!-- Energy chart (collapsible) -->
+<details class="section" open>
+<summary class="section-summary">Energy Chart</summary>
+<div class="card">
+  <div class="section-header">
+    <span class="section-title" id="chart-title">Today — Hourly Usage</span>
+    <span id="chart-summary" style="font-size:.85rem;color:var(--text-muted)"></span>
+  </div>
+  <div class="chart-wrap" style="height:280px"><canvas id="main-chart"></canvas></div>
+</div>
+
+</details>
+
+<!-- Summary table (collapsible) -->
+<details class="section" open>
+<summary class="section-summary">Summary Table</summary>
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">Summary</span>
+    <span id="table-count" class="badge badge--unknown">—</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead id="table-head"></thead>
+      <tbody id="table-body">
+        <tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</details>
+
+<!-- Heating cycles (collapsible) -->
+<details class="section">
+<summary class="section-summary">Heating Cycles</summary>
+<div class="card">
+  <div class="section-header">
+    <span class="section-title">Heating Cycles</span>
+    <span id="cycle-total" class="badge badge--unknown">—</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Date/Time</th><th>Duration</th><th>Mode</th><th>Setpoint</th></tr></thead>
+    <tbody id="cycles-body">
+      <tr><td colspan="4" style="text-align:center;color:var(--text-muted)">Loading…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</details>
+
+<!-- Data export (collapsible) -->
+<details class="section">
+<summary class="section-summary">Export Data</summary>
+<div class="card">
+  <div class="section-title" style="margin-bottom:.75rem">Export Data</div>
+  <div class="export-controls">
+    <div class="form-group">
+      <label class="form-label">Format</label>
+      <select class="form-select" id="export-granularity">
+        <option value="hourly">Hourly</option>
+        <option value="daily" selected>Daily</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">From</label>
+      <input type="date" class="form-input" id="export-start">
+    </div>
+    <div class="form-group">
+      <label class="form-label">To</label>
+      <input type="date" class="form-input" id="export-end">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Quick</label>
+      <select class="form-select" id="export-preset" onchange="applyExportPreset(this.value)">
+        <option value="">Custom</option>
+        <option value="7">7 days</option>
+        <option value="30" selected>30 days</option>
+        <option value="90">90 days</option>
+        <option value="365">1 year</option>
+        <option value="all">All</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">&nbsp;</label>
+      <button class="btn btn--primary btn--sm" onclick="exportCSV()">Download CSV</button>
+    </div>
+  </div>
+</div>
+</details>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let mainChart = null;
+let currentGranularity = 'hourly';
+let currentRange = 'day';
+
+// Export date defaults
+const today = new Date();
+const thirtyAgo = new Date(today); thirtyAgo.setDate(today.getDate() - 30);
+document.getElementById('export-end').value = today.toISOString().slice(0, 10);
+document.getElementById('export-start').value = thirtyAgo.toISOString().slice(0, 10);
+
+const cs = () => getComputedStyle(document.documentElement);
+const RANGE_LABELS = {day:'Today',yesterday:'Yesterday',week:'7 Days',month:'30 Days',quarter:'90 Days',year:'1 Year'};
+
+function setGranularity(g, btn) {
+  currentGranularity = g;
+  document.querySelectorAll('#granularity-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Auto-switch range if granularity doesn't fit
+  if ((g === 'hourly' || g === '6hr') && ['quarter','year'].includes(currentRange)) {
+    setRange('week', document.querySelector('#range-tabs .tab-btn:nth-child(2)'));
+    return;
+  }
+  if (g === 'monthly' && ['day','week'].includes(currentRange)) {
+    setRange('year', document.querySelector('#range-tabs .tab-btn:nth-child(5)'));
+    return;
+  }
+  loadData();
+}
+
+function setRange(r, btn) {
+  currentRange = r;
+  document.querySelectorAll('#range-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Auto-switch granularity: daily for 30d+, hourly for day
+  if (['quarter','year'].includes(r) && currentGranularity === 'hourly') {
+    currentGranularity = 'daily';
+    document.querySelectorAll('#granularity-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('#granularity-tabs .tab-btn:nth-child(2)').classList.add('active');
+  }
+  loadData();
+}
+
+async function loadData() {
+  const [energyR, cyclesR] = await Promise.all([
+    fetch(`/api/energy?range=${currentRange}`),
+    fetch(`/api/cycles?range=${currentRange}`),
+  ]);
+  const energy = await energyR.json();
+  const cycles = await cyclesR.json();
+
+  const title = document.getElementById('chart-title');
+  const summary = document.getElementById('chart-summary');
+
+  if (currentGranularity === 'hourly') {
+    title.textContent = `${RANGE_LABELS[currentRange]} — Hourly kWh`;
+    let hourly = energy.hourly || [];
+    // For "today", filter out future hours (stale data from timezone mismatch)
+    if (currentRange === 'day') {
+      const nowHour = new Date().getHours();
+      hourly = hourly.filter(h => h.hour <= nowHour);
+    }
+    renderHourlyChart(hourly);
+    renderHourlyTable(hourly);
+  } else if (currentGranularity === '6hr') {
+    title.textContent = `${RANGE_LABELS[currentRange]} — 6-Hour Blocks`;
+    if (currentRange === 'day' || currentRange === 'yesterday') {
+      // Single day: 4 blocks
+      let hourly6 = energy.hourly || [];
+      if (currentRange === 'day') {
+        const nowHour = new Date().getHours();
+        hourly6 = hourly6.filter(h => h.hour <= nowHour);
+      }
+      const blocks = aggregate6hr(hourly6);
+      render6hrChart(blocks);
+      render6hrTable(blocks);
+    } else {
+      // Multi-day: 4 blocks per day, shown as a bar per block across days
+      const multiBlocks = aggregate6hrMultiDay(energy.hourly || []);
+      render6hrMultiDayChart(multiBlocks);
+      render6hrTable(multiBlocks.summary);
+    }
+  } else if (currentGranularity === 'weekly') {
+    title.textContent = `${RANGE_LABELS[currentRange]} — Weekly kWh`;
+    const weekly = aggregateWeekly(energy.daily || []);
+    renderDailyChart(weekly);
+    renderDailyTable(weekly);
+  } else if (currentGranularity === 'monthly') {
+    title.textContent = `${RANGE_LABELS[currentRange]} — Monthly kWh`;
+    const monthly = aggregateMonthly(energy.daily || []);
+    renderDailyChart(monthly);
+    renderDailyTable(monthly);
+  } else {
+    title.textContent = `${RANGE_LABELS[currentRange]} — Daily kWh`;
+    renderDailyChart(energy.daily || []);
+    renderDailyTable(energy.daily || []);
+  }
+  summary.textContent = `${energy.total_kwh.toFixed(2)} kWh · $${energy.total_cost.toFixed(2)}`;
+  updateStats(energy);
+  renderCycles(cycles);
+}
+
+function renderHourlyChart(hourly) {
+  if (mainChart) mainChart.destroy();
+  const tierColor = {peak: cs().getPropertyValue('--tou-peak').trim(),
+                     mid_peak: cs().getPropertyValue('--tou-mid').trim(),
+                     off_peak: cs().getPropertyValue('--tou-off').trim()};
+  const defColor = cs().getPropertyValue('--text-muted').trim();
+
+  // For multi-day hourly, group by date+hour
+  const labels = hourly.map(h => `${String(h.hour).padStart(2,'0')}:00`);
+  const values = hourly.map(h => h.kwh);
+  const colors = hourly.map(h => tierColor[h.tou_tier] || defColor);
+
+  const costs = hourly.map(h => h.cost || 0);
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'kWh', data: values, backgroundColor: colors, borderRadius: 2, yAxisID: 'y' },
+        { label: 'Cost ($)', data: costs, type: 'line', yAxisID: 'cost',
+          borderColor: cs().getPropertyValue('--accent').trim(), backgroundColor: 'transparent',
+          pointBackgroundColor: cs().getPropertyValue('--accent').trim(),
+          tension: 0.3, pointRadius: 2, borderWidth: 2 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { color: cs().getPropertyValue('--text').trim(), boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'kWh', color: cs().getPropertyValue('--text-muted').trim() },
+             ticks: { color: cs().getPropertyValue('--text-muted').trim() } },
+        cost: { position: 'right', title: { display: true, text: '$', color: cs().getPropertyValue('--text-muted').trim() },
+                grid: { drawOnChartArea: false }, ticks: { color: cs().getPropertyValue('--text-muted').trim() } },
+        x: { ticks: { color: cs().getPropertyValue('--text-muted').trim(), maxRotation: 45, font: { size: 10 } } },
+      },
+    },
+  });
+}
+
+function renderDailyChart(daily) {
+  if (mainChart) mainChart.destroy();
+  const labels = daily.map(d => fmtDate(d.date));
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Off-Peak', data: daily.map(d => d.off_peak_kwh), backgroundColor: cs().getPropertyValue('--tou-off').trim(), stack: 's' },
+        { label: 'Mid-Peak', data: daily.map(d => d.mid_peak_kwh), backgroundColor: cs().getPropertyValue('--tou-mid').trim(), stack: 's' },
+        { label: 'Peak',     data: daily.map(d => d.peak_kwh),     backgroundColor: cs().getPropertyValue('--tou-peak').trim(), stack: 's' },
+        { label: 'Cost ($)', data: daily.map(d => d.total_cost), type: 'line', yAxisID: 'cost',
+          borderColor: cs().getPropertyValue('--accent').trim(), backgroundColor: 'transparent',
+          pointBackgroundColor: cs().getPropertyValue('--accent').trim(), tension: 0.3, pointRadius: 2 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { color: cs().getPropertyValue('--text').trim(), boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        x: { stacked: true, ticks: { color: cs().getPropertyValue('--text-muted').trim(), maxRotation: 45, font: { size: 10 } } },
+        y: { stacked: true, title: { display: true, text: 'kWh' }, ticks: { color: cs().getPropertyValue('--text-muted').trim() } },
+        cost: { position: 'right', title: { display: true, text: '$' }, grid: { drawOnChartArea: false },
+                ticks: { color: cs().getPropertyValue('--text-muted').trim() } },
+      },
+    },
+  });
+}
+
+function renderHourlyTable(hourly) {
+  const thead = document.getElementById('table-head');
+  const tbody = document.getElementById('table-body');
+  thead.innerHTML = '<tr><th>Hour</th><th>kWh</th><th>Cost</th><th>Tier</th></tr>';
+  const withData = hourly.filter(h => h.kwh > 0);
+  document.getElementById('table-count').textContent = `${withData.length} active hours`;
+  if (!withData.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No usage data</td></tr>'; return; }
+  tbody.innerHTML = withData.map(h => `<tr>
+    <td>${String(h.hour).padStart(2,'0')}:00</td>
+    <td>${h.kwh.toFixed(3)}</td>
+    <td>${h.cost != null ? '$' + h.cost.toFixed(4) : '—'}</td>
+    <td>${tierLabel(h.tou_tier)}</td>
+  </tr>`).join('');
+
+  const totKwh = withData.reduce((s,h) => s + h.kwh, 0);
+  const totCost = withData.reduce((s,h) => s + (h.cost || 0), 0);
+  const table = tbody.closest('table');
+  let tfoot = table.querySelector('tfoot');
+  if (!tfoot) { tfoot = document.createElement('tfoot'); table.appendChild(tfoot); }
+  tfoot.innerHTML = `
+    <tr><td>Total (${withData.length} hrs)</td><td>${totKwh.toFixed(3)}</td><td><strong>$${totCost.toFixed(4)}</strong></td><td></td></tr>
+  `;
+}
+
+function renderDailyTable(daily) {
+  const thead = document.getElementById('table-head');
+  const tbody = document.getElementById('table-body');
+  thead.innerHTML = `<tr>
+    <th>Date</th>
+    <th>Total kWh</th><th>Total $</th>
+    <th style="color:var(--tou-off)">Off-Peak kWh</th><th style="color:var(--tou-off)">Off $</th>
+    <th style="color:var(--tou-mid)">Mid kWh</th><th style="color:var(--tou-mid)">Mid $</th>
+    <th style="color:var(--tou-peak)">Peak kWh</th><th style="color:var(--tou-peak)">Peak $</th>
+  </tr>`;
+  document.getElementById('table-count').textContent = `${daily.length} days`;
+  if (!daily.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted)">No data</td></tr>'; return; }
+
+  const rows = daily.map(d => `<tr>
+    <td>${fmtDate(d.date)}</td>
+    <td><strong>${d.total_kwh.toFixed(2)}</strong></td><td><strong>$${d.total_cost.toFixed(2)}</strong></td>
+    <td style="color:var(--tou-off)">${d.off_peak_kwh.toFixed(2)}</td><td style="color:var(--tou-off)">$${(d.off_peak_kwh * 0.0837).toFixed(2)}</td>
+    <td style="color:var(--tou-mid)">${d.mid_peak_kwh.toFixed(2)}</td><td style="color:var(--tou-mid)">$${(d.mid_peak_kwh * 0.1465).toFixed(2)}</td>
+    <td style="color:var(--tou-peak)">${d.peak_kwh.toFixed(2)}</td><td style="color:var(--tou-peak)">$${(d.peak_kwh * 0.1674).toFixed(2)}</td>
+  </tr>`).join('');
+
+  const t = (arr, f) => arr.reduce((s,d) => s + (d[f]||0), 0);
+  const n = daily.length;
+  const totKwh=t(daily,'total_kwh'), totCost=t(daily,'total_cost');
+  const offKwh=t(daily,'off_peak_kwh'), midKwh=t(daily,'mid_peak_kwh'), peakKwh=t(daily,'peak_kwh');
+
+  const table = tbody.closest('table');
+  let tfoot = table.querySelector('tfoot');
+  if (!tfoot) { tfoot = document.createElement('tfoot'); table.appendChild(tfoot); }
+
+  tbody.innerHTML = rows;
+  tfoot.innerHTML = `
+    <tr>
+      <td><strong>Total (${n})</strong></td>
+      <td><strong>${totKwh.toFixed(2)}</strong></td><td><strong>$${totCost.toFixed(2)}</strong></td>
+      <td style="color:var(--tou-off)">${offKwh.toFixed(2)}</td><td style="color:var(--tou-off)">$${(offKwh*0.0837).toFixed(2)}</td>
+      <td style="color:var(--tou-mid)">${midKwh.toFixed(2)}</td><td style="color:var(--tou-mid)">$${(midKwh*0.1465).toFixed(2)}</td>
+      <td style="color:var(--tou-peak)">${peakKwh.toFixed(2)}</td><td style="color:var(--tou-peak)">$${(peakKwh*0.1674).toFixed(2)}</td>
+    </tr>
+    <tr style="color:var(--text-muted);font-size:.82rem">
+      <td>Avg/day</td>
+      <td>${(totKwh/n).toFixed(2)}</td><td>$${(totCost/n).toFixed(2)}</td>
+      <td>${(offKwh/n).toFixed(2)}</td><td>$${(offKwh/n*0.0837).toFixed(2)}</td>
+      <td>${(midKwh/n).toFixed(2)}</td><td>$${(midKwh/n*0.1465).toFixed(2)}</td>
+      <td>${(peakKwh/n).toFixed(2)}</td><td>$${(peakKwh/n*0.1674).toFixed(2)}</td>
+    </tr>
+  `;
+}
+
+function render6hrChart(blocks) {
+  if (mainChart) mainChart.destroy();
+  const labels = blocks.map(b => b.label);
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Off-Peak', data: blocks.map(b => b.tier_kwh.off_peak), backgroundColor: cs().getPropertyValue('--tou-off').trim(), stack: 's' },
+        { label: 'Mid-Peak', data: blocks.map(b => b.tier_kwh.mid_peak), backgroundColor: cs().getPropertyValue('--tou-mid').trim(), stack: 's' },
+        { label: 'Peak',     data: blocks.map(b => b.tier_kwh.peak),     backgroundColor: cs().getPropertyValue('--tou-peak').trim(), stack: 's' },
+        { label: 'Cost ($)', data: blocks.map(b => b.cost), type: 'line', yAxisID: 'cost',
+          borderColor: cs().getPropertyValue('--accent').trim(), backgroundColor: 'transparent',
+          pointBackgroundColor: cs().getPropertyValue('--accent').trim(), tension: 0.3, pointRadius: 4, borderWidth: 2 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { color: cs().getPropertyValue('--text').trim(), boxWidth: 12 } } },
+      scales: {
+        x: { stacked: true, ticks: { color: cs().getPropertyValue('--text-muted').trim() } },
+        y: { stacked: true, title: { display: true, text: 'kWh' }, ticks: { color: cs().getPropertyValue('--text-muted').trim() } },
+        cost: { position: 'right', title: { display: true, text: '$' }, grid: { drawOnChartArea: false }, ticks: { color: cs().getPropertyValue('--text-muted').trim() } },
+      },
+    },
+  });
+}
+
+function render6hrTable(blocks) {
+  const thead = document.getElementById('table-head');
+  const tbody = document.getElementById('table-body');
+  thead.innerHTML = '<tr><th>Block</th><th>Hours</th><th>Total kWh</th><th>Cost</th><th style="color:var(--tou-off)">Off-Peak</th><th style="color:var(--tou-mid)">Mid</th><th style="color:var(--tou-peak)">Peak</th></tr>';
+  document.getElementById('table-count').textContent = '4 blocks';
+
+  // Find the max block for highlighting
+  const maxIdx = blocks.reduce((mi, b, i, arr) => b.kwh > arr[mi].kwh ? i : mi, 0);
+
+  tbody.innerHTML = blocks.map((b, i) => `<tr${i === maxIdx ? ' style="background:var(--accent-light)"' : ''}>
+    <td><strong>${b.label}</strong>${i === maxIdx ? ' ⚡' : ''}</td>
+    <td style="color:var(--text-muted)">${b.hours}</td>
+    <td><strong>${b.kwh.toFixed(3)}</strong></td>
+    <td><strong>$${b.cost.toFixed(4)}</strong></td>
+    <td style="color:var(--tou-off)">${b.tier_kwh.off_peak.toFixed(3)}</td>
+    <td style="color:var(--tou-mid)">${b.tier_kwh.mid_peak.toFixed(3)}</td>
+    <td style="color:var(--tou-peak)">${b.tier_kwh.peak.toFixed(3)}</td>
+  </tr>`).join('');
+
+  const totKwh = blocks.reduce((s,b) => s + b.kwh, 0);
+  const totCost = blocks.reduce((s,b) => s + b.cost, 0);
+  const table = tbody.closest('table');
+  let tfoot = table.querySelector('tfoot');
+  if (!tfoot) { tfoot = document.createElement('tfoot'); table.appendChild(tfoot); }
+  tfoot.innerHTML = `<tr><td colspan="2"><strong>Total</strong></td><td><strong>${totKwh.toFixed(3)}</strong></td><td><strong>$${totCost.toFixed(4)}</strong></td><td colspan="3"></td></tr>`;
+}
+
+function renderCycles(cycles) {
+  const tbody = document.getElementById('cycles-body');
+  document.getElementById('cycle-total').textContent = `${cycles.length} cycles`;
+  if (!cycles.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No cycles</td></tr>'; return; }
+  tbody.innerHTML = cycles.slice(0, 50).map(c => `<tr>
+    <td>${fmtDt(c.start_time)}</td>
+    <td>${fmtDuration(c.duration_seconds)}</td>
+    <td>${c.mode}</td>
+    <td>${c.setpoint_at_start}°F</td>
+  </tr>`).join('');
+}
+
+function aggregate6hr(hourly) {
+  // Group hourly data into 4 blocks: 00-05 (Night), 06-11 (Morning), 12-17 (Afternoon), 18-23 (Evening)
+  const labels = ['Night (12-6a)', 'Morning (6a-12p)', 'Afternoon (12-6p)', 'Evening (6p-12a)'];
+  const blocks = [
+    {label: labels[0], kwh: 0, cost: 0, hours: '00:00–05:59', tier_kwh: {off_peak:0, mid_peak:0, peak:0}},
+    {label: labels[1], kwh: 0, cost: 0, hours: '06:00–11:59', tier_kwh: {off_peak:0, mid_peak:0, peak:0}},
+    {label: labels[2], kwh: 0, cost: 0, hours: '12:00–17:59', tier_kwh: {off_peak:0, mid_peak:0, peak:0}},
+    {label: labels[3], kwh: 0, cost: 0, hours: '18:00–23:59', tier_kwh: {off_peak:0, mid_peak:0, peak:0}},
+  ];
+  hourly.forEach(h => {
+    const idx = Math.floor(h.hour / 6);
+    if (idx >= 0 && idx < 4) {
+      blocks[idx].kwh += h.kwh;
+      blocks[idx].cost += (h.cost || 0);
+      if (h.tou_tier) blocks[idx].tier_kwh[h.tou_tier] = (blocks[idx].tier_kwh[h.tou_tier] || 0) + h.kwh;
+    }
+  });
+  return blocks;
+}
+
+function aggregate6hrMultiDay(hourly) {
+  // Group hourly data by date, then into 6hr blocks per date
+  const blockLabels = ['Night', 'Morning', 'Afternoon', 'Evening'];
+  const byDate = {};
+  hourly.forEach(h => {
+    // We don't have date info per hourly entry from the API, so we group all hours
+    // For multi-day, we need to use the daily data instead — fall back to summary
+    const idx = Math.floor(h.hour / 6);
+    if (!byDate[idx]) byDate[idx] = {kwh: 0, cost: 0, tier_kwh: {off_peak:0, mid_peak:0, peak:0}};
+    byDate[idx].kwh += h.kwh;
+    byDate[idx].cost += (h.cost || 0);
+    if (h.tou_tier) byDate[idx].tier_kwh[h.tou_tier] = (byDate[idx].tier_kwh[h.tou_tier] || 0) + h.kwh;
+  });
+  const blocks = blockLabels.map((label, i) => ({
+    label, hours: `${i*6}:00–${i*6+5}:59`,
+    kwh: (byDate[i]||{}).kwh || 0,
+    cost: (byDate[i]||{}).cost || 0,
+    tier_kwh: (byDate[i]||{}).tier_kwh || {off_peak:0, mid_peak:0, peak:0},
+  }));
+  return { blocks, summary: blocks };
+}
+
+function render6hrMultiDayChart(data) {
+  if (mainChart) mainChart.destroy();
+  const blocks = data.blocks;
+  const labels = blocks.map(b => b.label);
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Off-Peak', data: blocks.map(b => b.tier_kwh.off_peak), backgroundColor: cs().getPropertyValue('--tou-off').trim(), stack: 's' },
+        { label: 'Mid-Peak', data: blocks.map(b => b.tier_kwh.mid_peak), backgroundColor: cs().getPropertyValue('--tou-mid').trim(), stack: 's' },
+        { label: 'Peak',     data: blocks.map(b => b.tier_kwh.peak),     backgroundColor: cs().getPropertyValue('--tou-peak').trim(), stack: 's' },
+        { label: 'Cost ($)', data: blocks.map(b => b.cost), type: 'line', yAxisID: 'cost',
+          borderColor: cs().getPropertyValue('--accent').trim(), backgroundColor: 'transparent',
+          pointBackgroundColor: cs().getPropertyValue('--accent').trim(), tension: 0.3, pointRadius: 4, borderWidth: 2 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { color: cs().getPropertyValue('--text').trim(), boxWidth: 12 } } },
+      scales: {
+        x: { stacked: true, ticks: { color: cs().getPropertyValue('--text-muted').trim() } },
+        y: { stacked: true, title: { display: true, text: 'kWh' }, ticks: { color: cs().getPropertyValue('--text-muted').trim() } },
+        cost: { position: 'right', title: { display: true, text: '$' }, grid: { drawOnChartArea: false }, ticks: { color: cs().getPropertyValue('--text-muted').trim() } },
+      },
+    },
+  });
+}
+
+function aggregateWeekly(daily) {
+  const weeks = {};
+  daily.forEach(d => {
+    const dt = new Date(d.date + 'T00:00:00');
+    // Get Monday of the week
+    const day = dt.getDay();
+    const diff = dt.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(dt); monday.setDate(diff);
+    const key = monday.toISOString().slice(0, 10);
+    if (!weeks[key]) weeks[key] = {date: key, total_kwh:0, total_cost:0, peak_kwh:0, mid_peak_kwh:0, off_peak_kwh:0};
+    const w = weeks[key];
+    w.total_kwh += d.total_kwh; w.total_cost += d.total_cost;
+    w.peak_kwh += d.peak_kwh; w.mid_peak_kwh += d.mid_peak_kwh; w.off_peak_kwh += d.off_peak_kwh;
+  });
+  return Object.values(weeks).sort((a,b) => a.date.localeCompare(b.date));
+}
+
+function aggregateMonthly(daily) {
+  const months = {};
+  daily.forEach(d => {
+    const key = d.date.slice(0, 7); // YYYY-MM
+    if (!months[key]) months[key] = {date: key + '-01', total_kwh:0, total_cost:0, peak_kwh:0, mid_peak_kwh:0, off_peak_kwh:0};
+    const m = months[key];
+    m.total_kwh += d.total_kwh; m.total_cost += d.total_cost;
+    m.peak_kwh += d.peak_kwh; m.mid_peak_kwh += d.mid_peak_kwh; m.off_peak_kwh += d.off_peak_kwh;
+  });
+  return Object.values(months).sort((a,b) => a.date.localeCompare(b.date));
+}
+
+function updateStats(energy) {
+  document.getElementById('stat-total-kwh').textContent = `${energy.total_kwh.toFixed(2)} kWh`;
+  document.getElementById('stat-total-cost').textContent = `$${energy.total_cost.toFixed(2)}`;
+
+  const daily = energy.daily || [];
+  if (daily.length > 0) {
+    const avgKwh = energy.total_kwh / daily.length;
+    const avgCost = energy.total_cost / daily.length;
+    document.getElementById('stat-avg-kwh').textContent = `${avgKwh.toFixed(2)} kWh`;
+    document.getElementById('stat-avg-cost').textContent = `$${avgCost.toFixed(2)}/day`;
+
+    const maxDay = daily.reduce((a, b) => a.total_kwh > b.total_kwh ? a : b);
+    const minDay = daily.reduce((a, b) => a.total_kwh < b.total_kwh ? a : b);
+    document.getElementById('stat-max').textContent = `${maxDay.total_kwh.toFixed(2)} kWh`;
+    document.getElementById('stat-max-date').textContent = fmtDate(maxDay.date);
+    document.getElementById('stat-min').textContent = `${minDay.total_kwh.toFixed(2)} kWh`;
+    document.getElementById('stat-min-date').textContent = fmtDate(minDay.date);
+
+    const offPeakTotal = daily.reduce((s, d) => s + d.off_peak_kwh, 0);
+    const pct = energy.total_kwh > 0 ? (offPeakTotal / energy.total_kwh * 100) : 0;
+    document.getElementById('stat-offpeak-pct').textContent = `${pct.toFixed(0)}%`;
+  } else if (energy.hourly && energy.hourly.length > 0) {
+    // Hourly-only view (today)
+    const active = energy.hourly.filter(h => h.kwh > 0);
+    document.getElementById('stat-avg-kwh').textContent = active.length > 0
+      ? `${(energy.total_kwh / active.length).toFixed(3)} kWh` : '—';
+    document.getElementById('stat-avg-cost').textContent = 'per active hour';
+
+    const maxH = energy.hourly.reduce((a, b) => a.kwh > b.kwh ? a : b);
+    const minActive = active.length > 0 ? active.reduce((a, b) => a.kwh < b.kwh ? a : b) : null;
+    document.getElementById('stat-max').textContent = `${maxH.kwh.toFixed(3)} kWh`;
+    document.getElementById('stat-max-date').textContent = `${String(maxH.hour).padStart(2,'0')}:00`;
+    document.getElementById('stat-min').textContent = minActive ? `${minActive.kwh.toFixed(3)} kWh` : '—';
+    document.getElementById('stat-min-date').textContent = minActive ? `${String(minActive.hour).padStart(2,'0')}:00` : '—';
+
+    const offPeak = energy.hourly.filter(h => h.tou_tier === 'off_peak').reduce((s, h) => s + h.kwh, 0);
+    const pct = energy.total_kwh > 0 ? (offPeak / energy.total_kwh * 100) : 0;
+    document.getElementById('stat-offpeak-pct').textContent = `${pct.toFixed(0)}%`;
+  }
+}
+
+// Helpers
+function tierLabel(tier) {
+  const labels = {peak: '<span style="color:var(--tou-peak)">Peak</span>',
+                  mid_peak: '<span style="color:var(--tou-mid)">Mid</span>',
+                  off_peak: '<span style="color:var(--tou-off)">Off</span>'};
+  return labels[tier] || '—';
+}
+function fmtDate(d) {
+  const dt = new Date(d + 'T00:00:00');
+  const thisYear = new Date().getFullYear();
+  if (dt.getFullYear() !== thisYear) {
+    return dt.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'2-digit'});
+  }
+  return dt.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+}
+function fmtDt(dt) { return new Date(dt).toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function fmtDuration(s) { if (!s) return '—'; const m = Math.floor(s/60); return m > 0 ? `${m} min` : `${s}s`; }
+
+function applyExportPreset(val) {
+  if (!val) return;
+  const end = new Date();
+  document.getElementById('export-end').value = end.toISOString().slice(0, 10);
+  if (val === 'all') { document.getElementById('export-start').value = '2020-01-01'; }
+  else { const s = new Date(end); s.setDate(end.getDate() - parseInt(val)); document.getElementById('export-start').value = s.toISOString().slice(0, 10); }
+}
+
+async function exportCSV() {
+  const g = document.getElementById('export-granularity').value;
+  const s = document.getElementById('export-start').value;
+  const e = document.getElementById('export-end').value;
+  if (!s || !e) { showToast('Select dates.', 'warn'); return; }
+  try {
+    const r = await fetchWithTimeout(`/api/export?granularity=${g}&start=${s}&end=${e}`, {}, 30000);
+    if (!r.ok) { showToast('Export failed.', 'error'); return; }
+    const blob = await r.blob();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `econet_${g}_${s}_to_${e}.csv`; a.click();
+    showToast('CSV downloaded.', 'success');
+  } catch (e) { showToast('Export error.', 'error'); }
+}
+
+// Boot
+loadData();
+</script>
+{% endblock %}

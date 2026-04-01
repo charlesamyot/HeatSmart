@@ -1,0 +1,36 @@
+Third-Party Software Notices
+============================
+
+This software includes code derived from or inspired by the following
+open-source projects:
+
+pyeconet
+--------
+Copyright (c) William Scanlon
+Licensed under the MIT License
+https://github.com/w1ll1am23/pyeconet
+
+The EcoNet ClearBlade API communication protocol used in HeatSmart is
+based on the reverse-engineering work done by the pyeconet project.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+Chart.js
+--------
+Copyright (c) 2014-2024 Chart.js Contributors
+Licensed under the MIT License
+https://www.chartjs.org/
+
+Paho MQTT
+---------
+Copyright (c) Eclipse Foundation
+Licensed under the Eclipse Public License 2.0
+https://eclipse.org/paho/

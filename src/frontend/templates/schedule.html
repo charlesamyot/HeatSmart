@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% block title %}Schedule Simulator — EcoNet Monitor{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Schedule Simulator</h1>
+
+<div class="alert alert--info" style="margin-bottom:1rem">
+  Simulate how different heating schedules affect your energy cost. Drag the blocks to shift timing,
+  then see real-time savings estimates based on your actual usage data and Seattle City Light TOU rates.
+</div>
+
+<!-- TOU reference -->
+<div class="card section" style="padding:.6rem 1rem">
+  <div style="display:flex;align-items:center;gap:1rem;font-size:.78rem;flex-wrap:wrap">
+    <span style="font-weight:600;color:var(--text-muted)">TOU Rates:</span>
+    <span><span class="tou-swatch off"></span>Off-Peak 12–6a $0.084</span>
+    <span><span class="tou-swatch mid"></span>Mid-Peak $0.147</span>
+    <span><span class="tou-swatch peak"></span>Peak 5–9p $0.167</span>
+  </div>
+</div>
+
+<!-- Simulator -->
+<div class="card section">
+  <div class="section-header">
+    <span class="section-title">Your Schedule</span>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn btn--outline btn--sm" onclick="addBlock()">+ Add</button>
+      <button class="btn btn--outline btn--sm" onclick="resetBlocks()">Reset</button>
+      <button class="btn btn--primary btn--sm" onclick="runOptimizer()">Auto-Optimize</button>
+    </div>
+  </div>
+
+  <!-- TOU overlay bar -->
+  <div style="display:flex;height:16px;border-radius:4px;overflow:hidden;margin-bottom:2px">
+    <div style="flex:6;background:var(--tou-off);opacity:.25"></div>
+    <div style="flex:11;background:var(--tou-mid);opacity:.25"></div>
+    <div style="flex:4;background:var(--tou-peak);opacity:.25"></div>
+    <div style="flex:3;background:var(--tou-mid);opacity:.25"></div>
+  </div>
+
+  <!-- Hour labels -->
+  <div style="display:flex;font-size:.6rem;color:var(--text-muted);margin-bottom:4px">
+    <div style="flex:1;text-align:left">0</div>
+    <div style="flex:1;text-align:center">3</div>
+    <div style="flex:1;text-align:center">6</div>
+    <div style="flex:1;text-align:center">9</div>
+    <div style="flex:1;text-align:center">12</div>
+    <div style="flex:1;text-align:center">15</div>
+    <div style="flex:1;text-align:center">18</div>
+    <div style="flex:1;text-align:center">21</div>
+  </div>
+
+  <!-- Schedule blocks -->
+  <div id="schedule-bar" style="position:relative;height:50px;background:var(--surface-alt);border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer"
+       onclick="handleBarClick(event)">
+  </div>
+
+  <!-- Block editor -->
+  <div id="block-editor" style="margin-top:1rem">
+    <table class="data-table">
+      <thead><tr><th>Start</th><th>End</th><th>Setpoint</th><th>Mode</th><th>TOU</th><th>Est. Cost</th><th></th></tr></thead>
+      <tbody id="blocks-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Cost comparison -->
+<div class="card section">
+  <div class="section-header" style="margin-bottom:.75rem">
+    <span class="section-title">Cost Impact</span>
+    <div class="tabs" id="impact-tabs">
+      <button class="tab-btn active" onclick="setImpactPeriod(1, this)">Day</button>
+      <button class="tab-btn" onclick="setImpactPeriod(7, this)">Week</button>
+      <button class="tab-btn" onclick="setImpactPeriod(30, this)">Month</button>
+      <button class="tab-btn" onclick="setImpactPeriod(365, this)">Year</button>
+    </div>
+  </div>
+  <div class="compare-grid">
+    <div class="compare-card current">
+      <div class="compare-label">Without schedule</div>
+      <div class="compare-cost" id="sim-current-cost">$—</div>
+      <div id="sim-current-sub" style="font-size:.75rem;color:var(--text-muted)">per day</div>
+    </div>
+    <div class="compare-card suggested">
+      <div class="compare-label">With this schedule</div>
+      <div class="compare-cost" id="sim-new-cost">$—</div>
+      <div id="sim-savings" style="margin-top:.3rem"></div>
+    </div>
+  </div>
+  <div id="sim-breakdown" style="margin-top:.75rem">
+    <table class="data-table" style="font-size:.82rem">
+      <thead><tr><th></th><th>Without</th><th>With Schedule</th><th>Savings</th></tr></thead>
+      <tbody id="sim-breakdown-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Optimizer result -->
+<div class="card section" id="optimizer-result" style="display:none">
+  <div class="section-header">
+    <span class="section-title">Optimizer Suggestion</span>
+    <button class="btn btn--success btn--sm" onclick="applyOptimized()">Apply This</button>
+  </div>
+  <pre id="optimizer-explanation" style="font-size:.82rem;background:var(--surface-alt);padding:.75rem;border-radius:var(--radius);white-space:pre-wrap;font-family:inherit"></pre>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MODE_COLORS = {
+  'ENERGY_SAVING':'#38a169','HEAT_PUMP_ONLY':'#2b6cb0','HIGH_DEMAND':'#dd6b20',
+  'ELECTRIC_MODE':'#e53e3e','VACATION':'#805ad5','OFF':'#a0aec0',
+};
+const MODE_LABELS = {
+  'ENERGY_SAVING':'Energy Saving','HEAT_PUMP_ONLY':'Heat Pump','HIGH_DEMAND':'High Demand',
+  'ELECTRIC_MODE':'Electric','VACATION':'Vacation','OFF':'Off',
+};
+const TOU_RATES = {off_peak: 0.0837, mid_peak: 0.1465, peak: 0.1674};
+
+// Schedule blocks: [{start: 0-23, end: 1-24, setpoint: 110-140, mode: string}]
+let blocks = [
+  {start: 0, end: 4, setpoint: 110, mode: 'OFF'},
+  {start: 4, end: 9, setpoint: 130, mode: 'HEAT_PUMP_ONLY'},
+  {start: 9, end: 17, setpoint: 120, mode: 'ENERGY_SAVING'},
+  {start: 17, end: 24, setpoint: 115, mode: 'ENERGY_SAVING'},
+];
+let pendingOptimized = null;
+let impactDays = 1;
+
+renderAll();
+
+function setImpactPeriod(days, btn) {
+  impactDays = days;
+  document.querySelectorAll('#impact-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  simulateCost();
+}
+
+function renderAll() {
+  renderBar();
+  renderTable();
+  simulateCost();
+}
+
+function renderBar() {
+  const bar = document.getElementById('schedule-bar');
+  bar.innerHTML = blocks.map((b, i) => {
+    const left = (b.start / 24 * 100);
+    const width = ((b.end - b.start) / 24 * 100);
+    const color = MODE_COLORS[b.mode] || '#2b6cb0';
+    return `<div style="position:absolute;left:${left}%;width:${width}%;top:3px;bottom:3px;background:${color};border-radius:4px;display:flex;align-items:center;padding:0 6px;cursor:grab;overflow:hidden"
+                 title="${b.start}:00–${b.end}:00 ${b.setpoint}°F ${MODE_LABELS[b.mode]||b.mode}">
+      <span style="font-size:.7rem;font-weight:600;color:#fff;white-space:nowrap">${b.setpoint}° ${MODE_LABELS[b.mode]||''}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderTable() {
+  const tbody = document.getElementById('blocks-body');
+  tbody.innerHTML = blocks.map((b, i) => {
+    const touTier = getTouForBlock(b);
+    const estCost = estimateBlockCost(b);
+    return `<tr>
+      <td><input type="number" min="0" max="23" value="${b.start}" class="form-input" style="width:55px;font-size:.82rem" onchange="updateBlock(${i},'start',+this.value)"></td>
+      <td><input type="number" min="1" max="24" value="${b.end}" class="form-input" style="width:55px;font-size:.82rem" onchange="updateBlock(${i},'end',+this.value)"></td>
+      <td><input type="number" min="110" max="140" value="${b.setpoint}" class="form-input" style="width:65px;font-size:.82rem" onchange="updateBlock(${i},'setpoint',+this.value)"></td>
+      <td><select class="form-select" style="width:auto;font-size:.82rem" onchange="updateBlock(${i},'mode',this.value)">
+        ${Object.entries(MODE_LABELS).map(([k,v]) => `<option value="${k}" ${b.mode===k?'selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td>${touTier}</td>
+      <td>$${estCost.toFixed(4)}/hr</td>
+      <td>${blocks.length > 1 ? `<button class="btn btn--danger btn--sm" onclick="removeBlock(${i})">X</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function getTouForBlock(b) {
+  // Determine which TOU tiers this block spans
+  const tiers = new Set();
+  for (let h = b.start; h < b.end; h++) {
+    if (h < 6) tiers.add('off');
+    else if (h >= 17 && h < 21) tiers.add('peak');
+    else tiers.add('mid');
+  }
+  return [...tiers].map(t => `<span class="tou-swatch ${t}" style="display:inline-block"></span>`).join(' ');
+}
+
+function estimateBlockCost(b) {
+  // Rough cost per hour for this block
+  let totalRate = 0;
+  const hours = b.end - b.start;
+  for (let h = b.start; h < b.end; h++) {
+    if (h < 6) totalRate += TOU_RATES.off_peak;
+    else if (h >= 17 && h < 21) totalRate += TOU_RATES.peak;
+    else totalRate += TOU_RATES.mid_peak;
+  }
+  // Estimate ~0.15 kWh/hr average for heat pump mode, higher for electric
+  const kwhPerHr = b.mode === 'ELECTRIC_MODE' || b.mode === 'HIGH_DEMAND' ? 0.5 : 0.15;
+  return hours > 0 ? (totalRate / hours * kwhPerHr) : 0;
+}
+
+function simulateCost() {
+  const avgKwhPerHr = 0.12; // ~3 kWh/day average from historical data
+  const periodLabels = {1:'day', 7:'week', 30:'month', 365:'year'};
+  const periodLabel = periodLabels[impactDays] || `${impactDays} days`;
+
+  // Per-tier daily breakdown
+  const tiers = {off_peak:{base:0,sched:0,hours:0}, mid_peak:{base:0,sched:0,hours:0}, peak:{base:0,sched:0,hours:0}};
+
+  for (let h = 0; h < 24; h++) {
+    const tierName = h < 6 ? 'off_peak' : (h >= 17 && h < 21 ? 'peak' : 'mid_peak');
+    const rate = TOU_RATES[tierName];
+    tiers[tierName].hours++;
+    tiers[tierName].base += avgKwhPerHr * rate;
+
+    const block = blocks.find(b => h >= b.start && h < b.end);
+    if (block) {
+      if (block.mode === 'OFF' || block.mode === 'VACATION') {
+        // OFF = zero energy cost for this hour
+        tiers[tierName].sched += 0;
+      } else {
+        const spFactor = block.setpoint > 125 ? 1.3 : block.setpoint > 120 ? 1.1 : block.setpoint < 112 ? 0.5 : block.setpoint < 118 ? 0.7 : 1.0;
+        const modeFactor = block.mode === 'HEAT_PUMP_ONLY' ? 0.85 :
+                           block.mode === 'HIGH_DEMAND' ? 1.3 :
+                           block.mode === 'ELECTRIC_MODE' ? 1.8 : 1.0;
+        tiers[tierName].sched += avgKwhPerHr * spFactor * modeFactor * rate;
+      }
+    } else {
+      tiers[tierName].sched += avgKwhPerHr * rate;
+    }
+  }
+
+  const dailyBase = Object.values(tiers).reduce((s, t) => s + t.base, 0);
+  const dailySched = Object.values(tiers).reduce((s, t) => s + t.sched, 0);
+  const dailySavings = dailyBase - dailySched;
+  const pct = dailyBase > 0 ? (dailySavings / dailyBase * 100) : 0;
+
+  // Apply period multiplier (with conservative range for longer periods)
+  const conservativeFactor = impactDays > 30 ? 0.75 : impactDays > 7 ? 0.85 : 1.0;
+  const periodBase = dailyBase * impactDays;
+  const periodSched = dailySched * impactDays;
+  const periodSavingsLow = dailySavings * impactDays * 0.6;
+  const periodSavingsHigh = dailySavings * impactDays * conservativeFactor;
+
+  // Update header cards
+  document.getElementById('sim-current-cost').textContent = `$${periodBase.toFixed(2)}`;
+  document.getElementById('sim-new-cost').textContent = `$${periodSched.toFixed(2)}`;
+  document.getElementById('sim-current-sub').textContent = `per ${periodLabel}`;
+
+  const savingsEl = document.getElementById('sim-savings');
+  if (dailySavings > 0) {
+    savingsEl.innerHTML = `<span class="savings-badge">${pct.toFixed(1)}% · save $${periodSavingsLow.toFixed(2)}–$${periodSavingsHigh.toFixed(2)}</span>`;
+  } else if (dailySavings < 0) {
+    savingsEl.innerHTML = `<span style="color:var(--danger);font-size:.82rem;font-weight:600">+$${Math.abs(periodSched - periodBase).toFixed(2)} more per ${periodLabel}</span>`;
+  } else {
+    savingsEl.innerHTML = `<span style="color:var(--text-muted);font-size:.82rem">No change</span>`;
+  }
+
+  // Breakdown table
+  const tierLabels = {off_peak: {name:'Off-Peak', color:'var(--tou-off)'}, mid_peak: {name:'Mid-Peak', color:'var(--tou-mid)'}, peak: {name:'Peak', color:'var(--tou-peak)'}};
+  const tbody = document.getElementById('sim-breakdown-body');
+  let rows = '';
+  for (const [key, t] of Object.entries(tiers)) {
+    const label = tierLabels[key];
+    const base = t.base * impactDays;
+    const sched = t.sched * impactDays;
+    const diff = base - sched;
+    rows += `<tr>
+      <td style="color:${label.color};font-weight:600">${label.name} <span style="font-weight:400;color:var(--text-muted)">(${t.hours}h)</span></td>
+      <td>$${base.toFixed(2)}</td>
+      <td>$${sched.toFixed(2)}</td>
+      <td style="color:${diff >= 0 ? 'var(--success)' : 'var(--danger)'}">${diff >= 0 ? '-' : '+'}$${Math.abs(diff).toFixed(2)}</td>
+    </tr>`;
+  }
+  rows += `<tr style="font-weight:700;border-top:2px solid var(--border)">
+    <td>Total per ${periodLabel}</td>
+    <td>$${periodBase.toFixed(2)}</td>
+    <td>$${periodSched.toFixed(2)}</td>
+    <td style="color:${dailySavings >= 0 ? 'var(--success)' : 'var(--danger)'}">
+      ${dailySavings >= 0 ? '-' : '+'}$${Math.abs(periodBase - periodSched).toFixed(2)}
+    </td>
+  </tr>`;
+  tbody.innerHTML = rows;
+}
+
+function updateBlock(idx, field, value) {
+  blocks[idx][field] = value;
+  renderAll();
+}
+
+function removeBlock(idx) {
+  blocks.splice(idx, 1);
+  renderAll();
+}
+
+function addBlock() {
+  if (blocks.length >= 6) { showToast('Max 6 blocks', 'warn'); return; }
+  blocks.push({start: 12, end: 18, setpoint: 120, mode: 'ENERGY_SAVING'});
+  blocks.sort((a, b) => a.start - b.start);
+  renderAll();
+}
+
+function resetBlocks() {
+  blocks = [
+    {start: 0, end: 4, setpoint: 110, mode: 'OFF'},
+    {start: 4, end: 9, setpoint: 130, mode: 'HEAT_PUMP_ONLY'},
+    {start: 9, end: 17, setpoint: 120, mode: 'ENERGY_SAVING'},
+    {start: 17, end: 24, setpoint: 115, mode: 'ENERGY_SAVING'},
+  ];
+  document.getElementById('optimizer-result').style.display = 'none';
+  renderAll();
+  showToast('Reset to default schedule.', 'info');
+}
+
+function handleBarClick(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  const hour = Math.floor(pct * 24);
+  // Find and select the block at this hour
+  const idx = blocks.findIndex(b => hour >= b.start && hour < b.end);
+  if (idx >= 0) {
+    const rows = document.querySelectorAll('#blocks-body tr');
+    rows.forEach(r => r.style.background = '');
+    if (rows[idx]) rows[idx].style.background = 'var(--accent-light)';
+  }
+}
+
+// ---- Optimizer ----
+async function runOptimizer() {
+  try {
+    const r = await fetchWithTimeout('/api/schedule/optimize', {method: 'POST'}, 20000);
+    if (!r.ok) { showToast('Optimization failed.', 'error'); return; }
+    const result = await r.json();
+    pendingOptimized = result;
+
+    // Convert optimizer entries to blocks
+    const optBlocks = [];
+    result.suggested_entries.forEach((e, i) => {
+      const [hh, mm] = e.time_of_day.split(':').map(Number);
+      const next = result.suggested_entries[i + 1];
+      const endHour = next ? parseInt(next.time_of_day.split(':')[0]) : 24;
+      optBlocks.push({start: hh, end: endHour, setpoint: e.setpoint, mode: e.mode || 'ENERGY_SAVING'});
+    });
+
+    blocks = optBlocks;
+    renderAll();
+
+    document.getElementById('optimizer-result').style.display = 'block';
+    document.getElementById('optimizer-explanation').textContent = result.explanation;
+    showToast('Optimizer found a schedule!', 'success');
+  } catch (e) {
+    showToast('Optimizer error.', 'error');
+  }
+}
+
+function applyOptimized() {
+  document.getElementById('optimizer-result').style.display = 'none';
+  showToast('Optimized schedule applied to simulator.', 'success');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}EcoNet Monitor{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    (function() {
+      const saved = localStorage.getItem('econet-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-brand">
+      <span class="nav-icon">🔥</span>
+      <span>EcoNet</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="/dashboard" {% if request.url.path == '/dashboard' %}class="active"{% endif %}>
+        <span class="nav-item-icon">📊</span> Dashboard
+      </a></li>
+      <li><a href="/schedule" {% if request.url.path == '/schedule' %}class="active"{% endif %}>
+        <span class="nav-item-icon">📅</span> Schedule
+      </a></li>
+      <li><a href="/history" {% if request.url.path == '/history' %}class="active"{% endif %}>
+        <span class="nav-item-icon">📈</span> History
+      </a></li>
+      <li><a href="/settings" {% if request.url.path == '/settings' %}class="active"{% endif %}>
+        <span class="nav-item-icon">⚙️</span> Settings
+      </a></li>
+    </ul>
+    <div class="nav-right">
+      <a id="connection-link" href="#" class="nav-conn" title="Connected">
+        <svg id="conn-icon-linked" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        <svg id="conn-icon-broken" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <path d="M16.5 9.4l-9-5.19"/>
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <line x1="3.27" y1="6.96" x2="12" y2="12.01"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+          <line x1="1" y1="1" x2="23" y2="23" stroke="var(--danger)"/>
+        </svg>
+      </a>
+      <!-- Hover popover for connection info -->
+      <div class="conn-popover" id="conn-popover">
+        <div id="conn-pop-content" style="font-size:.82rem;line-height:1.6">Loading…</div>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
+        <span id="theme-icon">🌙</span>
+      </button>
+      <a href="/help" class="theme-toggle" title="Help" style="text-decoration:none;font-size:.95rem">?</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Backfill progress bar -->
+  <div id="backfill-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:.5rem 1.5rem;z-index:100;font-size:.82rem">
+    <div style="display:flex;align-items:center;gap:1rem">
+      <span class="spinner"></span>
+      <span id="backfill-text">Loading historical data…</span>
+      <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div id="backfill-progress" style="height:100%;background:var(--accent);width:0%;transition:width .3s"></div>
+      </div>
+      <span id="backfill-pct" style="color:var(--text-muted)">0%</span>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container" aria-live="assertive" aria-atomic="false"></div>
+
+  <script>
+  // ---- Theme ----
+  function toggleTheme() {
+    const html = document.documentElement;
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('econet-theme', next);
+    document.getElementById('theme-icon').textContent = next === 'dark' ? '☀️' : '🌙';
+  }
+  document.getElementById('theme-icon').textContent =
+    document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+
+  // ---- Toast ----
+  function showToast(message, type = 'info', durationMs = 4500) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast--${type}`;
+    toast.setAttribute('role', 'alert');
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity .3s';
+      setTimeout(() => toast.remove(), 350);
+    }, durationMs);
+  }
+
+  // ---- fetchWithTimeout ----
+  async function fetchWithTimeout(url, opts = {}, timeoutMs = 8000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...opts, signal: controller.signal });
+    } finally {
+      clearTimeout(id);
+    }
+  }
+
+  // ---- Connection hover popover ----
+  let connPopTimer = null;
+  let connPopLoaded = false;
+  const connLink = document.getElementById('connection-link');
+  const connPopover = document.getElementById('conn-popover');
+
+  connLink.addEventListener('mouseenter', () => {
+    clearTimeout(connPopTimer);
+    connPopover.classList.add('visible');
+    if (!connPopLoaded) loadConnPopover();
+  });
+  connLink.addEventListener('mouseleave', () => {
+    connPopTimer = setTimeout(() => connPopover.classList.remove('visible'), 300);
+  });
+  connPopover.addEventListener('mouseenter', () => clearTimeout(connPopTimer));
+  connPopover.addEventListener('mouseleave', () => {
+    connPopTimer = setTimeout(() => connPopover.classList.remove('visible'), 200);
+  });
+
+  async function loadConnPopover() {
+    try {
+      const [statusR, deviceR] = await Promise.all([
+        fetch('/api/config/status'),
+        fetch('/api/device'),
+      ]);
+      const status = await statusR.json();
+      const device = deviceR.ok ? await deviceR.json() : null;
+      const el = document.getElementById('conn-pop-content');
+      const loc = device && device.location;
+      const modeLabels = {OFF:'Off',ENERGY_SAVING:'Energy Saving',HEAT_PUMP_ONLY:'Heat Pump',HIGH_DEMAND:'High Demand',ELECTRIC_MODE:'Electric',VACATION:'Vacation'};
+
+      let html = '<div style="font-weight:700;font-size:.9rem;margin-bottom:.5rem">';
+      html += status.connected ? '<span style="color:var(--success)">Connected</span>' : '<span style="color:var(--danger)">Disconnected</span>';
+      html += status.mqtt_connected ? ' <span style="font-size:.72rem;color:var(--success)">(MQTT Live)</span>' : ' <span style="font-size:.72rem;color:var(--warn)">(Polling)</span>';
+      html += '</div>';
+
+      if (device) {
+        const rows = [
+          ['Device', device.name || '—'],
+          ['Location', loc ? `${loc.city}, ${loc.state} ${loc.zipcode}` : '—'],
+          ['Mode', modeLabels[device.mode] || device.mode || '—'],
+          ['Status', device.running ? `<span style="color:var(--success)">${device.running_state || 'Running'}</span>` : 'Idle'],
+          ['Setpoint', `${device.setpoint}°F`],
+          ['Hot Water', device.hot_water_avail != null ? `${device.hot_water_avail}%` : '—'],
+        ];
+        html += rows.map(([k,v]) => `<div class="conn-pop-row"><span class="conn-pop-label">${k}</span><span class="conn-pop-value">${v}</span></div>`).join('');
+      }
+
+      if (status.last_poll) {
+        html += `<div class="conn-pop-row"><span class="conn-pop-label">Last poll</span><span class="conn-pop-value">${new Date(status.last_poll).toLocaleTimeString()}</span></div>`;
+      }
+
+      el.innerHTML = html;
+      connPopLoaded = true;
+      // Refresh every 30s while visible
+      setTimeout(() => { connPopLoaded = false; }, 30000);
+    } catch (e) {
+      document.getElementById('conn-pop-content').textContent = 'Failed to load';
+    }
+  }
+
+  // ---- Connection icon ----
+  async function updateConnectionBadge() {
+    try {
+      const r = await fetch('/api/config/status');
+      const d = await r.json();
+      const link = document.getElementById('connection-link');
+      const iconLinked = document.getElementById('conn-icon-linked');
+      const iconBroken = document.getElementById('conn-icon-broken');
+      if (d.connected) {
+        link.href = '#';
+        link.title = 'Connected to EcoNet';
+        link.style.color = 'var(--success)';
+        iconLinked.style.display = '';
+        iconBroken.style.display = 'none';
+      } else {
+        link.href = '/settings';
+        link.title = 'Disconnected — click to configure';
+        link.style.color = 'var(--danger)';
+        iconLinked.style.display = 'none';
+        iconBroken.style.display = '';
+      }
+    } catch {}
+  }
+  updateConnectionBadge();
+  setInterval(updateConnectionBadge, 30000);
+
+  // ---- Backfill progress polling ----
+  let backfillDone = false;
+  async function checkBackfill() {
+    if (backfillDone) return;
+    try {
+      const r = await fetch('/api/backfill-status');
+      const d = await r.json();
+      const bar = document.getElementById('backfill-bar');
+      if (d.running) {
+        bar.style.display = 'block';
+        const pct = d.total > 0 ? Math.round((d.done / d.total) * 100) : 0;
+        document.getElementById('backfill-progress').style.width = pct + '%';
+        document.getElementById('backfill-pct').textContent = pct + '%';
+        document.getElementById('backfill-text').textContent =
+          `Loading historical data… ${d.current_date}` + (d.errors > 0 ? ` (${d.errors} errors)` : '');
+      } else if (bar.style.display !== 'none' && d.done > 0) {
+        bar.style.display = 'none';
+        backfillDone = true;
+        showToast(`Historical data loaded (${d.done} days)`, 'success');
+      } else {
+        bar.style.display = 'none';
+      }
+    } catch {}
+  }
+  checkBackfill();
+  setInterval(checkBackfill, 3000);
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
