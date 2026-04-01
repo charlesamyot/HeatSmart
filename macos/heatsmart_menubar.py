@@ -16,10 +16,13 @@ import webbrowser
 import rumps
 
 APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# When running as .app bundle, __file__ is inside the .app — walk up to find the project
+# When running as .app bundle, __file__ resolves inside the .app — find the project root
 if ".app" in APP_DIR:
-    # e.g. /Users/.../heatsmart/HeatSmart.app/Contents/Resources → go up 3 levels
-    APP_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(APP_DIR))))
+    # Walk up until we exit the .app directory
+    candidate = APP_DIR
+    while ".app" in candidate and candidate != "/":
+        candidate = os.path.dirname(candidate)
+    APP_DIR = candidate
 CONFIG_PATH = os.path.join(APP_DIR, "config", "menubar.json")
 DEFAULT_PORT = 7777
 # Use system Python, not the bundled py2app Python
