@@ -16,8 +16,14 @@ import webbrowser
 import rumps
 
 APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# When running as .app bundle, __file__ is inside the .app — walk up to find the project
+if ".app" in APP_DIR:
+    # e.g. /Users/.../heatsmart/HeatSmart.app/Contents/Resources → go up 3 levels
+    APP_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(APP_DIR))))
 CONFIG_PATH = os.path.join(APP_DIR, "config", "menubar.json")
 DEFAULT_PORT = 7777
+# Use system Python, not the bundled py2app Python
+PYTHON_PATH = "/usr/bin/python3"
 
 
 def load_config():
@@ -74,7 +80,7 @@ class HeatSmartApp(rumps.App):
 
         self.server_process = subprocess.Popen(
             [
-                sys.executable, "-m", "uvicorn",
+                PYTHON_PATH, "-m", "uvicorn",
                 "src.backend.main:app",
                 "--host", "127.0.0.1",
                 "--port", str(self.port),
