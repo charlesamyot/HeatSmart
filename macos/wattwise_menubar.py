@@ -22,7 +22,7 @@ if ".app" in APP_DIR:
         candidate = os.path.dirname(candidate)
     APP_DIR = candidate
 CONFIG_PATH = os.path.join(APP_DIR, "config", "menubar.json")
-DEFAULT_PORT = 7777
+DEFAULT_PORT = 8000
 PYTHON_PATH = "/usr/bin/python3"
 
 
