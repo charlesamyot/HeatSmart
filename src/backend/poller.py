@@ -2,7 +2,7 @@
 Background data collection using APScheduler.
 
 Tasks:
-- State poll every 5 minutes → HeaterReading rows + cycle detection
+- State poll every 5 minutes → HeaterReading rows
 - Daily rollup at midnight → DailyEnergySummary rows
 - MQTT real-time updates as primary; REST poll as fallback
 
@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from .config import get_settings, load_tou_rates
 from .econet_client import EcoNetClient, WaterHeaterState
-from .models import DailyEnergySummary, EnergyUsage, HeaterReading, HeatingCycle, WaterUsage
+from .models import DailyEnergySummary, EnergyUsage, HeaterReading, WaterUsage
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,6 @@ class Poller:
         self._scheduler = AsyncIOScheduler()
         self._settings = get_settings()
         self._tou_rates = load_tou_rates()
-        self._cycle_state: dict = {}  # device_id -> (was_running, cycle_id)
         # Backfill progress tracking
         self.backfill_status = {"running": False, "total": 0, "done": 0, "current_date": "", "errors": 0}
 
@@ -286,38 +285,7 @@ class Poller:
                 wifi_signal=device.wifi_signal,
             )
             session.add(reading)
-            await session.flush()
-            await self._track_cycle(session, device, reading)
             await session.commit()
-
-    async def _track_cycle(
-        self, session: AsyncSession, device: WaterHeaterState, reading: HeaterReading
-    ) -> None:
-        device_id = device.device_id
-        was_running, open_cycle_id = self._cycle_state.get(device_id, (False, None))
-
-        if device.running and not was_running:
-            cycle = HeatingCycle(
-                start_time=reading.timestamp,
-                mode=device.mode,
-                setpoint_at_start=device.setpoint,
-            )
-            session.add(cycle)
-            await session.flush()
-            self._cycle_state[device_id] = (True, cycle.id)
-
-        elif not device.running and was_running and open_cycle_id is not None:
-            result = await session.execute(
-                select(HeatingCycle).where(HeatingCycle.id == open_cycle_id)
-            )
-            cycle = result.scalar_one_or_none()
-            if cycle:
-                cycle.end_time = reading.timestamp
-                if cycle.start_time:
-                    cycle.duration_seconds = int((reading.timestamp - cycle.start_time).total_seconds())
-            self._cycle_state[device_id] = (False, None)
-        else:
-            self._cycle_state[device_id] = (device.running, open_cycle_id)
 
     async def _build_summary(self, session: AsyncSession, target_date: date) -> None:
         result = await session.execute(

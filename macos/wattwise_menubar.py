@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-HeatSmart — macOS Menu Bar App
+WattWise — macOS Menu Bar App
 Runs the FastAPI server in the background with a menu bar icon.
 No Terminal window needed. Configurable port via Settings.
 """
@@ -16,16 +16,13 @@ import webbrowser
 import rumps
 
 APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# When running as .app bundle, __file__ resolves inside the .app — find the project root
 if ".app" in APP_DIR:
-    # Walk up until we exit the .app directory
     candidate = APP_DIR
     while ".app" in candidate and candidate != "/":
         candidate = os.path.dirname(candidate)
     APP_DIR = candidate
 CONFIG_PATH = os.path.join(APP_DIR, "config", "menubar.json")
-DEFAULT_PORT = 7777
-# Use system Python, not the bundled py2app Python
+DEFAULT_PORT = 8000
 PYTHON_PATH = "/usr/bin/python3"
 
 
@@ -43,12 +40,12 @@ def save_config(cfg):
         json.dump(cfg, f, indent=2)
 
 
-class HeatSmartApp(rumps.App):
+class WattWiseApp(rumps.App):
     def __init__(self):
         super().__init__(
-            "HeatSmart",
+            "WattWise",
             icon=None,
-            title="🔥",
+            title="⚡",
             quit_button=None,
         )
         self.config = load_config()
@@ -58,9 +55,9 @@ class HeatSmartApp(rumps.App):
 
         self.status_item = rumps.MenuItem(f"Server: Starting on port {self.port}...")
         self.menu = [
-            rumps.MenuItem("HeatSmart v1.0", callback=None),
+            rumps.MenuItem("WattWise v1.1", callback=None),
             None,
-            rumps.MenuItem("Open HeatSmart", callback=self.open_app),
+            rumps.MenuItem("Open WattWise", callback=self.open_app),
             rumps.MenuItem("Open Dashboard", callback=self.open_dashboard),
             None,
             self.status_item,
@@ -69,7 +66,7 @@ class HeatSmartApp(rumps.App):
             rumps.MenuItem("Settings...", callback=self.open_settings),
             rumps.MenuItem("View Server Log", callback=self.view_log),
             None,
-            rumps.MenuItem("Quit HeatSmart", callback=self.quit_app),
+            rumps.MenuItem("Quit WattWise", callback=self.quit_app),
         ]
 
         threading.Thread(target=self.start_server, daemon=True).start()
@@ -81,7 +78,6 @@ class HeatSmartApp(rumps.App):
     def start_server(self, open_browser=True):
         env = os.environ.copy()
         env["PYTHONUNBUFFERED"] = "1"
-        # Ensure user site-packages are on PYTHONPATH
         env["PYTHONPATH"] = APP_DIR
 
         log_path = os.path.join(APP_DIR, "config", "server.log")
@@ -103,16 +99,14 @@ class HeatSmartApp(rumps.App):
             )
         except Exception as e:
             self.status_item.title = f"Server: Launch failed ({e})"
-            self.title = "🔥⚠️"
+            self.title = "⚡⚠️"
             return
 
-        # Wait for the server to actually be ready (up to 20 seconds)
         for _ in range(40):
             time.sleep(0.5)
-            # Check if process died
             if self.server_process.poll() is not None:
                 self.status_item.title = "Server: Crashed (check config/server.log)"
-                self.title = "🔥⚠️"
+                self.title = "⚡⚠️"
                 return
             if self._port_is_open():
                 break
@@ -120,22 +114,20 @@ class HeatSmartApp(rumps.App):
         if self._port_is_open():
             self.server_running = True
             self.status_item.title = f"Server: Running on port {self.port}"
-            self.title = "🔥"
+            self.title = "⚡"
             if open_browser:
                 webbrowser.open(self.url)
         else:
             self.status_item.title = "Server: Timed out (check config/server.log)"
-            self.title = "🔥⚠️"
+            self.title = "⚡⚠️"
             return
 
-        # Wait for process to exit (blocks this thread)
         self.server_process.wait()
         self.server_running = False
         self.status_item.title = "Server: Stopped"
-        self.title = "🔥⚠️"
+        self.title = "⚡⚠️"
 
     def _port_is_open(self):
-        """Check if the server is accepting connections."""
         try:
             with socket.create_connection(("127.0.0.1", self.port), timeout=0.5):
                 return True
@@ -152,7 +144,6 @@ class HeatSmartApp(rumps.App):
         self.server_running = False
 
     def open_app(self, _):
-        """Open the main app page in the default browser."""
         if self.server_running:
             webbrowser.open(self.url)
         else:
@@ -166,13 +157,13 @@ class HeatSmartApp(rumps.App):
 
     def restart_server(self, _, open_browser=False):
         self.status_item.title = "Server: Restarting..."
-        self.title = "🔥"
+        self.title = "⚡"
         self.stop_server()
         threading.Thread(target=lambda: self.start_server(open_browser=open_browser), daemon=True).start()
 
     def open_settings(self, _):
         response = rumps.Window(
-            title="HeatSmart Settings",
+            title="WattWise Settings",
             message=f"Server port (current: {self.port}).\nChange requires restart.",
             default_text=str(self.port),
             ok="Save & Restart",
@@ -206,4 +197,4 @@ class HeatSmartApp(rumps.App):
 
 
 if __name__ == "__main__":
-    HeatSmartApp().run()
+    WattWiseApp().run()

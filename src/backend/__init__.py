@@ -1,1 +1,1 @@
-# EcoNet Monitor backend package
+# WattWise backend package

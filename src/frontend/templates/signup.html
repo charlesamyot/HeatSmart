@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>WattWise — Create Account</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <meta name="supabase-url" content="{{ supabase_url or '' }}">
+  <meta name="supabase-anon-key" content="{{ supabase_key or '' }}">
+  <script>
+    (function() {
+      const saved = localStorage.getItem('econet-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+  <style>
+    .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+    .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.15); padding: 2.5rem 2rem; width: 100%; max-width: 400px; }
+    .auth-logo { text-align: center; margin-bottom: 2rem; }
+    .auth-logo h1 { font-size: 1.8rem; font-weight: 700; margin-top: .5rem; }
+    .auth-logo p { color: var(--text-muted); font-size: .9rem; margin-top: .25rem; }
+    .auth-message { display: none; margin-top: 1rem; padding: .75rem; border-radius: var(--radius); font-size: .85rem; text-align: center; }
+    .auth-link { background: none; border: none; color: var(--accent); cursor: pointer; font-size: .85rem; }
+    .auth-link:hover { text-decoration: underline; }
+    .password-rules { font-size: .75rem; color: var(--text-muted); margin-top: .25rem; }
+    .password-rules span { display: inline-block; margin-right: .75rem; }
+    .password-rules .met { color: var(--success); }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg width="56" height="56" viewBox="0 0 512 512" fill="none">
+          <defs><linearGradient id="ww-signup" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#10B981"/></linearGradient></defs>
+          <path d="M134 433c0-218 164-273 245-354 0 136-27 245-136 300" stroke="url(#ww-signup)" stroke-width="11" stroke-linecap="round" fill="none"/>
+          <path d="M134 432c50-95 112-169 193-207" stroke="url(#ww-signup)" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.55"/>
+          <circle cx="134" cy="433" r="18" fill="#10B981"/>
+        </svg>
+        <h1>Create Account</h1>
+        <p>Join WattWise to start saving</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="signup-email">Email</label>
+        <input type="email" id="signup-email" class="form-input" placeholder="you@email.com" autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="signup-password">Password</label>
+        <input type="password" id="signup-password" class="form-input" placeholder="Create a password" oninput="checkPassword()">
+        <div class="password-rules" id="pw-rules">
+          <span id="pw-len">6+ characters</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="signup-confirm">Confirm Password</label>
+        <input type="password" id="signup-confirm" class="form-input" placeholder="Confirm password">
+      </div>
+
+      <button class="btn btn--primary" style="width:100%;justify-content:center" id="signup-btn" onclick="doSignUp()">
+        Create Account
+      </button>
+
+      <div style="text-align:center;margin-top:1rem">
+        <span style="font-size:.85rem;color:var(--text-muted)">Already have an account?</span>
+        <a href="/login" class="auth-link">Sign in</a>
+      </div>
+
+      <div class="auth-message" id="signup-message"></div>
+    </div>
+  </div>
+
+  <script src="/static/js/auth.js"></script>
+  <script>
+  function checkPassword() {
+    const pw = document.getElementById('signup-password').value;
+    const lenEl = document.getElementById('pw-len');
+    lenEl.className = pw.length >= 6 ? 'met' : '';
+  }
+
+  function showMsg(text, type) {
+    const el = document.getElementById('signup-message');
+    el.style.display = 'block';
+    el.style.background = type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--accent-light)';
+    el.style.color = type === 'error' || type === 'success' ? '#fff' : 'var(--accent)';
+    el.textContent = text;
+  }
+
+  async function doSignUp() {
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const confirm = document.getElementById('signup-confirm').value;
+    const btn = document.getElementById('signup-btn');
+
+    if (!email) { showMsg('Email is required.', 'error'); return; }
+    if (password.length < 6) { showMsg('Password must be at least 6 characters.', 'error'); return; }
+    if (password !== confirm) { showMsg('Passwords do not match.', 'error'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Creating account...';
+    document.getElementById('signup-message').style.display = 'none';
+
+    try {
+      const data = await supabaseAuth.signUp(email, password);
+
+      if (data.access_token) {
+        // Email confirmation disabled — logged in immediately
+        supabaseAuth.setSession(data);
+        window.location.href = '/dashboard';
+      } else if (data.id || (data.user && data.user.id)) {
+        // Email confirmation required
+        showMsg('Account created! Check your email for a confirmation link, then sign in.', 'success');
+        btn.textContent = 'Account Created';
+        setTimeout(() => { window.location.href = '/login'; }, 4000);
+      } else if (data.error_description || data.msg || data.error) {
+        showMsg(data.error_description || data.msg || data.error || 'Sign up failed.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+      } else {
+        showMsg('Something went wrong. Please try again.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+      }
+    } catch (e) {
+      showMsg('Connection error: ' + e.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+    }
+  }
+
+  // Enter key submits
+  document.getElementById('signup-confirm').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doSignUp();
+  });
+  </script>
+</body>
+</html>

@@ -17,7 +17,11 @@ from .database import close_db, init_db
 from .econet_client import EcoNetClient
 from .poller import Poller
 from .routes_api import router as api_router, set_client
+from .routes_auth import router as auth_router
+from .routes_devices import router as devices_router
+from .routes_locations import router as locations_router
 from .routes_pages import router as pages_router
+from .routes_tou import router as tou_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -69,9 +73,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="EcoNet Water Heater Monitor",
-    description="Monitor and optimize your Rheem EcoNet water heater",
-    version="1.0.0",
+    title="WattWise",
+    description="Whole-home energy savings platform — monitor and optimize your connected devices",
+    version="1.1.0",
     lifespan=lifespan,
 )
 
@@ -84,7 +88,7 @@ app.add_middleware(
     allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -105,6 +109,10 @@ if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
 app.include_router(api_router)
+app.include_router(auth_router)
+app.include_router(devices_router)
+app.include_router(locations_router)
+app.include_router(tou_router)
 app.include_router(pages_router)
 
 

@@ -21,11 +21,11 @@ from .config import get_settings
 from .database import get_session
 from .models import (
     ComfortPreferences, DailyEnergySummary, EnergyUsage, HeaterReading,
-    HeatingCycle, ScheduleEntry, TOURateEntry, WaterUsage,
+    ScheduleEntry, TOURateEntry, WaterUsage,
 )
 from .schemas import (
     ComfortPreferencesIn, ComfortPreferencesOut, ConfigStatus, CopyScheduleRequest,
-    CredentialsIn, DailyEnergyOut, EnergyResponse, HeaterStatus, HeatingCycleOut,
+    CredentialsIn, DailyEnergyOut, EnergyResponse, HeaterStatus,
     HourlyEnergy, ModeRequest, OptimizedSchedule, ScheduleEntryIn, ScheduleEntryOut,
     ScheduleUpdate, SetpointRequest, TOURateIn, TOURateOut,
 )
@@ -129,7 +129,7 @@ async def force_refresh():
 
 
 # ---------------------------------------------------------------------------
-# Energy & Cycles
+# Energy
 # ---------------------------------------------------------------------------
 
 @router.get("/energy", response_model=EnergyResponse)
@@ -160,23 +160,6 @@ async def get_energy(
     return EnergyResponse(range=range, hourly=hourly, daily=daily,
                           total_kwh=sum(r.kwh for r in rows),
                           total_cost=sum(r.cost or 0.0 for r in rows))
-
-
-@router.get("/cycles", response_model=list[HeatingCycleOut])
-async def get_cycles(
-    range: Annotated[Literal["day", "yesterday", "week", "month", "quarter", "year"], Query()] = "day",
-    session: AsyncSession = Depends(get_session),
-):
-    start, _ = _date_range(range)
-    result = await session.execute(
-        select(HeatingCycle)
-        .where(HeatingCycle.start_time >= datetime.combine(start, datetime.min.time()))
-        .order_by(HeatingCycle.start_time.desc()).limit(200)
-    )
-    return [HeatingCycleOut(id=r.id, start_time=r.start_time, end_time=r.end_time,
-                            duration_seconds=r.duration_seconds, mode=r.mode,
-                            setpoint_at_start=r.setpoint_at_start)
-            for r in result.scalars().all()]
 
 
 # ---------------------------------------------------------------------------

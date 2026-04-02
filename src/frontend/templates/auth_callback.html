@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>WattWise — Signing in...</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <meta name="supabase-url" content="{{ supabase_url or '' }}">
+  <meta name="supabase-anon-key" content="{{ supabase_key or '' }}">
+  <script>
+    (function() {
+      const saved = localStorage.getItem('econet-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+</head>
+<body>
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem">
+    <div style="text-align:center">
+      <div class="spinner" style="margin:0 auto 1rem"></div>
+      <p style="color:var(--text-muted)">Signing you in...</p>
+    </div>
+  </div>
+  <script src="/static/js/auth.js"></script>
+  <script>
+    // If auth.js didn't redirect (no hash token), go to login
+    setTimeout(function() {
+      if (!supabaseAuth.isAuthenticated()) {
+        window.location.href = '/login';
+      } else {
+        window.location.href = '/dashboard';
+      }
+    }, 2000);
+  </script>
+</body>
+</html>

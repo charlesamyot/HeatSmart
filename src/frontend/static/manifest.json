@@ -1,7 +1,7 @@
 {
-  "name": "HeatSmart",
-  "short_name": "HeatSmart",
-  "description": "Smart heating, smart savings. Monitor and optimize your water heater with TOU rate awareness.",
+  "name": "WattWise",
+  "short_name": "WattWise",
+  "description": "Smart energy, real savings. Monitor and optimize your appliances with TOU rate awareness.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0f1117",
