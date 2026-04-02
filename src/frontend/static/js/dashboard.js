@@ -12,7 +12,6 @@ async function forceRefresh() {
     await fetchWithTimeout('/api/refresh', { method: 'POST' });
     await loadStatus();
     await loadEnergy('day', document.querySelector('.tab-btn.active'));
-    await loadCycles();
     showToast('Refreshed from EcoNet.', 'success');
   } catch (e) {
     showToast('Refresh failed.', 'error');
@@ -25,7 +24,6 @@ async function forceRefresh() {
 // ---- Boot ----
 loadStatus();
 loadEnergy('day', document.querySelector('.tab-btn'));
-loadCycles();
 setInterval(loadStatus, 30000);
 
 // ---- Status ----
@@ -206,28 +204,6 @@ function renderBar(labels, values, colors, yLabel) {
       },
     },
   });
-}
-
-// ---- Heating cycles ----
-async function loadCycles() {
-  const r = await fetch('/api/cycles?range=day');
-  const cycles = await r.json();
-  const tbody = document.getElementById('cycles-body');
-  document.getElementById('cycle-count').textContent = `${cycles.length} today`;
-  document.getElementById('cycle-count').className = 'badge badge--unknown';
-
-  if (!cycles.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center">No heating cycles today</td></tr>';
-    return;
-  }
-  tbody.innerHTML = cycles.slice(0, 10).map(c => `
-    <tr>
-      <td>${new Date(c.start_time).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'})}</td>
-      <td>${fmtDuration(c.duration_seconds)}</td>
-      <td>${c.mode}</td>
-      <td>${c.setpoint_at_start}°F</td>
-    </tr>
-  `).join('');
 }
 
 // ---- Helpers ----

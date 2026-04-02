@@ -35,18 +35,6 @@ class HeaterReading(Base):
     wifi_signal: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 
-class HeatingCycle(Base):
-    """Derived from running state transitions — start/end of each heating run."""
-    __tablename__ = "heating_cycles"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
-    end_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    duration_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    mode: Mapped[str] = mapped_column(String(32), nullable=False)
-    setpoint_at_start: Mapped[float] = mapped_column(Float, nullable=False)
-
-
 class EnergyUsage(Base):
     """Hourly energy consumption from EcoNet API."""
     __tablename__ = "energy_usage"

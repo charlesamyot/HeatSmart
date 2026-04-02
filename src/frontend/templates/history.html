@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}History — WattWise{% endblock %}
+{% block title %}History — EcoNet Monitor{% endblock %}
 
 {% block content %}
 <h1 class="page-title">History</h1>
@@ -98,24 +98,6 @@
 
 </details>
 
-<!-- Heating cycles (collapsible) -->
-<details class="section">
-<summary class="section-summary">Heating Cycles</summary>
-<div class="card">
-  <div class="section-header">
-    <span class="section-title">Heating Cycles</span>
-    <span id="cycle-total" class="badge badge--unknown">—</span>
-  </div>
-  <table class="data-table">
-    <thead><tr><th>Date/Time</th><th>Duration</th><th>Mode</th><th>Setpoint</th></tr></thead>
-    <tbody id="cycles-body">
-      <tr><td colspan="4" style="text-align:center;color:var(--text-muted)">Loading…</td></tr>
-    </tbody>
-  </table>
-</div>
-
-</details>
-
 <!-- Data export (collapsible) -->
 <details class="section">
 <summary class="section-summary">Export Data</summary>
@@ -202,12 +184,8 @@ function setRange(r, btn) {
 }
 
 async function loadData() {
-  const [energyR, cyclesR] = await Promise.all([
-    fetch(`/api/energy?range=${currentRange}`),
-    fetch(`/api/cycles?range=${currentRange}`),
-  ]);
+  const energyR = await fetch(`/api/energy?range=${currentRange}`);
   const energy = await energyR.json();
-  const cycles = await cyclesR.json();
 
   const title = document.getElementById('chart-title');
   const summary = document.getElementById('chart-summary');
@@ -257,7 +235,6 @@ async function loadData() {
   }
   summary.textContent = `${energy.total_kwh.toFixed(2)} kWh · $${energy.total_cost.toFixed(2)}`;
   updateStats(energy);
-  renderCycles(cycles);
 }
 
 function renderHourlyChart(hourly) {
@@ -457,18 +434,6 @@ function render6hrTable(blocks) {
   let tfoot = table.querySelector('tfoot');
   if (!tfoot) { tfoot = document.createElement('tfoot'); table.appendChild(tfoot); }
   tfoot.innerHTML = `<tr><td colspan="2"><strong>Total</strong></td><td><strong>${totKwh.toFixed(3)}</strong></td><td><strong>$${totCost.toFixed(4)}</strong></td><td colspan="3"></td></tr>`;
-}
-
-function renderCycles(cycles) {
-  const tbody = document.getElementById('cycles-body');
-  document.getElementById('cycle-total').textContent = `${cycles.length} cycles`;
-  if (!cycles.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No cycles</td></tr>'; return; }
-  tbody.innerHTML = cycles.slice(0, 50).map(c => `<tr>
-    <td>${fmtDt(c.start_time)}</td>
-    <td>${fmtDuration(c.duration_seconds)}</td>
-    <td>${c.mode}</td>
-    <td>${c.setpoint_at_start}°F</td>
-  </tr>`).join('');
 }
 
 function aggregate6hr(hourly) {
