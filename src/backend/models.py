@@ -129,3 +129,16 @@ class ComfortPreferences(Base):
 
     # UsagePattern model removed — energy data not available via REST on Gen5 firmware.
     # Usage patterns will be derived from HeaterReading state snapshots when needed.
+
+
+class Device(Base):
+    """Registered device (water heater, EV charger, etc.) for multi-device support."""
+    __tablename__ = "devices"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)  # UUID as string
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)  # econet, smartthings, manual
+    device_type: Mapped[str] = mapped_column(String(32), nullable=False, default="water_heater")
+    external_device_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())

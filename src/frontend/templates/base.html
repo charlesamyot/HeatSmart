@@ -33,6 +33,24 @@
         </svg>
         <span class="sidebar-title">WattWise</span>
       </div>
+      <!-- Location selector -->
+      <div class="sidebar-location" id="location-selector">
+        <button class="sidebar-link" onclick="toggleLocationMenu()" id="location-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <span id="location-name">My Home</span>
+          <span style="margin-left:auto;font-size:.6rem;opacity:.5">&#9660;</span>
+        </button>
+        <div id="location-menu" style="display:none;padding:0 .5rem .5rem;border-bottom:1px solid var(--border);margin-bottom:.25rem">
+          <div id="location-list" style="max-height:120px;overflow-y:auto"></div>
+          <a href="/settings#locations" class="sidebar-link" style="font-size:.78rem;opacity:.7;margin-top:.25rem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Add location</span>
+          </a>
+        </div>
+      </div>
       <nav class="sidebar-nav">
         <a href="/dashboard" class="sidebar-link{% if request.url.path == '/dashboard' %} active{% endif %}">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -42,6 +60,15 @@
             <rect x="14" y="14" width="7" height="7" rx="1.5"/>
           </svg>
           <span>Dashboard</span>
+        </a>
+        <a href="/devices" class="sidebar-link{% if request.url.path == '/devices' %} active{% endif %}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+            <line x1="12" y1="12" x2="12" y2="16"/>
+            <line x1="10" y1="14" x2="14" y2="14"/>
+          </svg>
+          <span>Devices</span>
         </a>
         <a href="/schedule" class="sidebar-link{% if request.url.path == '/schedule' %} active{% endif %}">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -58,7 +85,7 @@
         </a>
         <a href="/settings" class="sidebar-link{% if request.url.path == '/settings' %} active{% endif %}">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44"/>
             <circle cx="12" cy="12" r="3"/>
           </svg>
           <span>Settings</span>
@@ -347,6 +374,7 @@
     };
     const commands = [
       { group: 'Pages', icon: I.grid, label: 'Dashboard', desc: 'Overview and controls', action: () => location.href='/dashboard' },
+      { group: 'Pages', icon: svgIcon('<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>'), label: 'Devices', desc: 'Manage connected devices', action: () => location.href='/devices' },
       { group: 'Pages', icon: I.optimize, label: 'Optimize', desc: 'Savings plan and scheduling', action: () => location.href='/schedule' },
       { group: 'Pages', icon: I.activity, label: 'History', desc: 'Energy usage history', action: () => location.href='/history' },
       { group: 'Pages', icon: I.gear, label: 'Settings', desc: 'Device, rates, preferences', action: () => location.href='/settings' },
@@ -484,6 +512,29 @@
         else cmdkOpen();
       }
     });
+  })();
+  </script>
+
+  <script>
+  // ---- Location selector ----
+  function toggleLocationMenu() {
+    const menu = document.getElementById('location-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+  // Load locations from API (or localStorage fallback)
+  (async function loadLocations() {
+    const saved = localStorage.getItem('ww-current-location');
+    if (saved) {
+      try {
+        const loc = JSON.parse(saved);
+        document.getElementById('location-name').textContent = loc.name || 'My Home';
+      } catch {}
+    }
+    try {
+      const r = await fetch('/api/devices');
+      if (!r.ok) return;
+      // For now, just use the default location name
+    } catch {}
   })();
   </script>
 

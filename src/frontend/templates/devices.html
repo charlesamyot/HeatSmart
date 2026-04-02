@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+{% block title %}Devices — WattWise{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1 class="page-title" style="margin-bottom:0">Devices</h1>
+  <button class="btn btn--primary btn--sm" onclick="showAddDevice()">+ Add Device</button>
+</div>
+
+<!-- Device list -->
+<div id="device-list" class="status-grid">
+  <div class="card" style="text-align:center;padding:2.5rem 1.5rem;color:var(--text-muted)">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 1rem;opacity:.4">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+      <line x1="12" y1="12" x2="12" y2="16"/>
+      <line x1="10" y1="14" x2="14" y2="14"/>
+    </svg>
+    <p style="font-size:.9rem;margin-bottom:.75rem">No devices connected yet</p>
+    <button class="btn btn--primary btn--sm" onclick="showAddDevice()">Add your first device</button>
+  </div>
+</div>
+
+<!-- Add device modal -->
+<div class="cmdk-overlay" id="add-device-overlay">
+  <div class="cmdk-dialog" style="max-width:480px;padding:0">
+    <!-- Step 1: Choose provider -->
+    <div id="add-step-1">
+      <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h2 style="font-size:1.1rem;font-weight:600">Add Device</h2>
+          <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem" onclick="hideAddDevice()">&times;</button>
+        </div>
+        <p style="font-size:.82rem;color:var(--text-muted);margin-top:.25rem">Choose your device provider</p>
+      </div>
+      <div style="padding:1rem 1.5rem">
+        <button class="provider-option" onclick="selectProvider('econet')">
+          <div class="provider-icon" style="background:#2b6cb0">R</div>
+          <div class="provider-info">
+            <div class="provider-name">Rheem EcoNet</div>
+            <div class="provider-desc">Water heaters, HVAC systems</div>
+          </div>
+          <span style="color:var(--text-muted);font-size:.8rem">&rsaquo;</span>
+        </button>
+        <button class="provider-option" onclick="selectProvider('smartthings')" style="opacity:.5" disabled>
+          <div class="provider-icon" style="background:#15803d">S</div>
+          <div class="provider-info">
+            <div class="provider-name">SmartThings</div>
+            <div class="provider-desc">Samsung smart appliances — Coming soon</div>
+          </div>
+        </button>
+        <button class="provider-option" onclick="selectProvider('manual')">
+          <div class="provider-icon" style="background:var(--text-muted)">+</div>
+          <div class="provider-info">
+            <div class="provider-name">Manual Entry</div>
+            <div class="provider-desc">Track any appliance manually</div>
+          </div>
+          <span style="color:var(--text-muted);font-size:.8rem">&rsaquo;</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Credentials (EcoNet) -->
+    <div id="add-step-2" style="display:none">
+      <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <button style="background:none;border:none;color:var(--text-muted);cursor:pointer" onclick="backToStep1()">&larr;</button>
+          <div>
+            <h2 style="font-size:1.1rem;font-weight:600" id="add-provider-title">Connect</h2>
+            <p style="font-size:.82rem;color:var(--text-muted);margin-top:.15rem" id="add-provider-desc"></p>
+          </div>
+        </div>
+      </div>
+      <div style="padding:1.25rem 1.5rem">
+        <div id="add-cred-fields">
+          <div class="form-group">
+            <label class="form-label" for="add-email">Email</label>
+            <input type="email" id="add-email" class="form-input" placeholder="your@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="add-password">Password</label>
+            <input type="password" id="add-password" class="form-input" placeholder="Password">
+          </div>
+        </div>
+        <div id="add-manual-fields" style="display:none">
+          <div class="form-group">
+            <label class="form-label" for="add-name">Device Name</label>
+            <input type="text" id="add-name" class="form-input" placeholder="e.g. Dishwasher, Washer">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="add-type">Device Type</label>
+            <select class="form-select" id="add-type">
+              <option value="water_heater">Water Heater</option>
+              <option value="dishwasher">Dishwasher</option>
+              <option value="washer">Washer</option>
+              <option value="dryer">Dryer</option>
+              <option value="ev_charger">EV Charger</option>
+              <option value="hvac">HVAC</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div id="add-error" style="display:none;padding:.5rem .75rem;border-radius:var(--radius);background:var(--danger);color:#fff;font-size:.82rem;margin-bottom:.75rem"></div>
+        <button class="btn btn--primary" style="width:100%;justify-content:center" id="add-submit-btn" onclick="submitDevice()">
+          Connect Device
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.provider-option {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  width: 100%;
+  padding: .85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  text-align: left;
+  margin-bottom: .5rem;
+}
+.provider-option:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-light); }
+.provider-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.provider-info { flex: 1; }
+.provider-name { font-weight: 600; font-size: .9rem; }
+.provider-desc { font-size: .78rem; color: var(--text-muted); margin-top: .1rem; }
+
+.device-card {
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.device-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+.device-type-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedProvider = null;
+
+function showAddDevice() {
+  document.getElementById('add-device-overlay').classList.add('visible');
+  document.getElementById('add-step-1').style.display = 'block';
+  document.getElementById('add-step-2').style.display = 'none';
+}
+
+function hideAddDevice() {
+  document.getElementById('add-device-overlay').classList.remove('visible');
+}
+
+function backToStep1() {
+  document.getElementById('add-step-1').style.display = 'block';
+  document.getElementById('add-step-2').style.display = 'none';
+}
+
+function selectProvider(provider) {
+  selectedProvider = provider;
+  document.getElementById('add-step-1').style.display = 'none';
+  document.getElementById('add-step-2').style.display = 'block';
+  document.getElementById('add-error').style.display = 'none';
+
+  const credFields = document.getElementById('add-cred-fields');
+  const manualFields = document.getElementById('add-manual-fields');
+
+  if (provider === 'econet') {
+    document.getElementById('add-provider-title').textContent = 'Connect Rheem EcoNet';
+    document.getElementById('add-provider-desc').textContent = 'Enter your EcoNet account credentials';
+    document.getElementById('add-submit-btn').textContent = 'Connect & Discover Devices';
+    credFields.style.display = 'block';
+    manualFields.style.display = 'none';
+  } else if (provider === 'manual') {
+    document.getElementById('add-provider-title').textContent = 'Add Manual Device';
+    document.getElementById('add-provider-desc').textContent = 'Track any appliance by logging usage manually';
+    document.getElementById('add-submit-btn').textContent = 'Add Device';
+    credFields.style.display = 'none';
+    manualFields.style.display = 'block';
+  }
+}
+
+async function submitDevice() {
+  const btn = document.getElementById('add-submit-btn');
+  const errEl = document.getElementById('add-error');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Connecting...';
+
+  try {
+    let body;
+    if (selectedProvider === 'econet') {
+      body = {
+        provider: 'econet',
+        name: 'Water Heater',
+        device_type: 'water_heater',
+        credentials: {
+          email: document.getElementById('add-email').value.trim(),
+          password: document.getElementById('add-password').value,
+        },
+      };
+    } else {
+      body = {
+        provider: 'manual',
+        name: document.getElementById('add-name').value.trim(),
+        device_type: document.getElementById('add-type').value,
+      };
+    }
+
+    const r = await fetch('/api/devices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (r.ok) {
+      hideAddDevice();
+      showToast('Device added successfully', 'success');
+      loadDevices();
+    } else {
+      const d = await r.json();
+      errEl.textContent = d.detail || 'Failed to add device';
+      errEl.style.display = 'block';
+    }
+  } catch (e) {
+    errEl.textContent = 'Connection error: ' + e.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = selectedProvider === 'econet' ? 'Connect & Discover Devices' : 'Add Device';
+  }
+}
+
+const deviceTypeIcons = {
+  water_heater: '🔥', dishwasher: '🍽', washer: '👕', dryer: '🌀',
+  ev_charger: '⚡', hvac: '❄️', other: '📦',
+};
+
+const deviceTypeLabels = {
+  water_heater: 'Water Heater', dishwasher: 'Dishwasher', washer: 'Washer', dryer: 'Dryer',
+  ev_charger: 'EV Charger', hvac: 'HVAC', other: 'Other',
+};
+
+async function loadDevices() {
+  try {
+    const r = await fetch('/api/devices');
+    if (!r.ok) return;
+    const devices = await r.json();
+
+    const container = document.getElementById('device-list');
+    if (!devices.length) {
+      container.innerHTML = `
+        <div class="card" style="text-align:center;padding:2.5rem 1.5rem;color:var(--text-muted)">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 1rem;opacity:.4">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+            <line x1="12" y1="12" x2="12" y2="16"/>
+            <line x1="10" y1="14" x2="14" y2="14"/>
+          </svg>
+          <p style="font-size:.9rem;margin-bottom:.75rem">No devices connected yet</p>
+          <button class="btn btn--primary btn--sm" onclick="showAddDevice()">Add your first device</button>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = devices.map(d => `
+      <div class="card device-card" onclick="location.href='/devices/${d.id}'">
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+          <div class="device-type-icon" style="background:var(--accent-light);font-size:1.4rem">
+            ${deviceTypeIcons[d.device_type] || '📦'}
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:.95rem">${d.name}</div>
+            <div style="font-size:.78rem;color:var(--text-muted)">${deviceTypeLabels[d.device_type] || d.device_type} &middot; ${d.provider}</div>
+          </div>
+          <span class="badge ${d.is_active ? 'badge--ok' : 'badge--unknown'}" style="margin-left:auto">
+            ${d.is_active ? 'Active' : 'Inactive'}
+          </span>
+        </div>
+      </div>
+    `).join('');
+  } catch {}
+}
+
+// Close modal on overlay click
+document.getElementById('add-device-overlay').addEventListener('click', function(e) {
+  if (e.target === this) hideAddDevice();
+});
+
+loadDevices();
+</script>
+{% endblock %}

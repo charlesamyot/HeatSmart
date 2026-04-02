@@ -46,6 +46,11 @@ async def schedule(request: Request):
     return _templates.TemplateResponse("schedule.html", _ctx(request))
 
 
+@router.get("/devices", response_class=HTMLResponse)
+async def devices(request: Request):
+    return _templates.TemplateResponse("devices.html", _ctx(request))
+
+
 @router.get("/settings", response_class=HTMLResponse)
 async def settings(request: Request):
     return _templates.TemplateResponse("settings.html", _ctx(request))

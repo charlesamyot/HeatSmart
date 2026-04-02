@@ -186,3 +186,32 @@ class ConfigStatus(BaseModel):
     last_error: Optional[str]
     mqtt_connected: bool
     db_path: str
+
+
+# ---------------------------------------------------------------------------
+# Multi-Device Management
+# ---------------------------------------------------------------------------
+
+class DeviceCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=128)
+    provider: Literal["econet", "smartthings", "manual"]
+    device_type: Literal[
+        "water_heater", "dishwasher", "washer", "dryer",
+        "ev_charger", "hvac", "other"
+    ] = "water_heater"
+    credentials: Optional[CredentialsIn] = None  # provider login (required for econet)
+
+
+class DeviceOut(BaseModel):
+    id: str
+    name: str
+    provider: str
+    device_type: str
+    external_device_id: Optional[str]
+    is_active: bool
+    created_at: datetime
+
+
+class DeviceUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=128)
+    is_active: Optional[bool] = None
