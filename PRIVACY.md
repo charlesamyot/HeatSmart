@@ -2,7 +2,7 @@
 
 **Last updated:** April 1, 2026
 
-HeatSmart ("we", "our", "the app") is operated by Charles Amyot. This policy describes how we collect, use, and protect your personal information.
+WattWise ("we", "our", "the app") is operated by Charles Amyot. This policy describes how we collect, use, and protect your personal information.
 
 ## What We Collect
 
@@ -58,7 +58,7 @@ We will respond to data requests within 30 days.
 
 ## Children
 
-HeatSmart is intended for users aged 18 and older. We do not knowingly collect data from children under 13.
+WattWise is intended for users aged 18 and older. We do not knowingly collect data from children under 13.
 
 ## Changes
 
@@ -67,5 +67,5 @@ We may update this policy from time to time. Significant changes will be communi
 ## Contact
 
 For privacy questions or data requests:
-- Email: charles@heatsmart.app
-- GitHub: https://github.com/charlesamyot/HeatSmart/issues
+- Email: charles@wattwise.app
+- GitHub: https://github.com/charlesamyot/WattWise/issues

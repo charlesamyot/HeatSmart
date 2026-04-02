@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Settings — EcoNet Monitor{% endblock %}
+{% block title %}Settings — WattWise{% endblock %}
 
 {% block content %}
 <h1 class="page-title">Settings</h1>
@@ -174,6 +174,20 @@
       <button class="btn btn--outline btn--sm" onclick="toggleTouEditor()">Cancel</button>
     </div>
   </div>
+</div>
+
+<!-- Cloud Sync -->
+<div class="card section" style="margin-top:1.25rem">
+  <div class="section-title" style="margin-bottom:1rem">Cloud Sync</div>
+  <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem">
+    Sync your history data to Supabase for cloud backup and cross-device access.
+    Sign in first to enable sync.
+  </p>
+  <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+    <button class="btn btn--primary btn--sm" onclick="syncToCloud()" id="sync-btn">Sync Now</button>
+    <span id="sync-status" style="font-size:.85rem;color:var(--text-muted)"></span>
+  </div>
+  <div id="sync-result" style="display:none;margin-top:.75rem;padding:.75rem;border-radius:var(--radius);background:var(--surface-alt);font-size:.82rem"></div>
 </div>
 
 <!-- Debug tools — collapsible drawer -->
@@ -465,6 +479,45 @@ async function loadDeviceInfo() {
     document.getElementById('device-cbid').textContent = d.device_name || '—';
   } catch (e) {
     document.getElementById('device-card').style.display = 'none';
+  }
+}
+
+// ---- Cloud Sync ----
+async function syncToCloud() {
+  const btn = document.getElementById('sync-btn');
+  const statusEl = document.getElementById('sync-status');
+  const resultEl = document.getElementById('sync-result');
+
+  if (!supabaseAuth.isAuthenticated()) {
+    showToast('Sign in first to enable cloud sync.', 'warn');
+    return;
+  }
+
+  btn.disabled = true;
+  statusEl.textContent = 'Syncing...';
+  resultEl.style.display = 'none';
+
+  try {
+    const r = await fetch('/api/sync', { method: 'POST' });
+    const data = await r.json();
+
+    if (r.ok) {
+      statusEl.textContent = `Synced ${data.total_synced} records`;
+      statusEl.style.color = 'var(--success)';
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = Object.entries(data.details || {}).map(([k, v]) =>
+        `<div><strong>${k}:</strong> ${v.synced} records${v.error ? ` <span style="color:var(--danger)">(${v.error})</span>` : ''}</div>`
+      ).join('');
+      if (data.total_synced > 0) showToast(`Synced ${data.total_synced} records to cloud.`, 'success');
+    } else {
+      statusEl.textContent = data.detail || 'Sync failed';
+      statusEl.style.color = 'var(--danger)';
+    }
+  } catch (e) {
+    statusEl.textContent = `Error: ${e.message}`;
+    statusEl.style.color = 'var(--danger)';
+  } finally {
+    btn.disabled = false;
   }
 }
 

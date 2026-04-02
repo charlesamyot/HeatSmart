@@ -10,7 +10,7 @@ Copyright (c) William Scanlon
 Licensed under the MIT License
 https://github.com/w1ll1am23/pyeconet
 
-The EcoNet ClearBlade API communication protocol used in HeatSmart is
+The EcoNet ClearBlade API communication protocol used in WattWise is
 based on the reverse-engineering work done by the pyeconet project.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

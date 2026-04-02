@@ -30,9 +30,9 @@ async def create_checkout_session(
 
     if payment_type == "premium":
         amount = 999  # fixed $9.99
-        description = "HeatSmart Premium Unlock"
+        description = "WattWise Premium Unlock"
     else:
-        description = f"HeatSmart Donation — ${amount / 100:.2f}"
+        description = f"WattWise Donation — ${amount / 100:.2f}"
 
     try:
         session = stripe.checkout.Session.create(

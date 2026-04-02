@@ -70,9 +70,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="EcoNet Water Heater Monitor",
-    description="Monitor and optimize your Rheem EcoNet water heater",
-    version="1.0.0",
+    title="WattWise",
+    description="Smart energy, real savings. Monitor and optimize your home appliances with TOU rate awareness.",
+    version="1.1.0",
     lifespan=lifespan,
 )
 
