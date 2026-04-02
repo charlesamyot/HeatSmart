@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Based on logo-03 warm style: leaf/sprout shape = growth/savings, warm tones -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="logo-23-savings-leaf.svg"
+   inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
+   inkscape:export-filename="logo-23-savings-leaf.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview4"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="0.80217648"
+     inkscape:cx="255.55474"
+     inkscape:cy="344.06394"
+     inkscape:window-width="1472"
+     inkscape:window-height="895"
+     inkscape:window-x="1"
+     inkscape:window-y="33"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg4"
+     inkscape:export-bgcolor="#ffffff00" />
+  <defs
+     id="defs2">
+    <linearGradient
+       id="g23"
+       x1="0"
+       y1="0"
+       x2="0"
+       y2="1">
+      <stop
+         offset="0%"
+         stop-color="#F59E0B"
+         id="stop1" />
+      <stop
+         offset="100%"
+         stop-color="#10B981"
+         id="stop2" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#g23"
+       id="linearGradient4"
+       x1="212.34249"
+       y1="91.457878"
+       x2="212.34249"
+       y2="318.27827"
+       gradientTransform="matrix(1.1299048,0,0,1.6447138,-111.09165,-84.832158)"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#g23"
+       id="linearGradient5"
+       x1="177"
+       y1="237"
+       x2="177"
+       y2="383"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.3632205,0,0,1.3632205,-111.09165,-84.832158)" />
+  </defs>
+  <rect
+     width="512"
+     height="512"
+     rx="112"
+     fill="#1C1917"
+     id="rect2"
+     style="opacity:0.999" />
+  <g
+     id="g8"
+     transform="translate(7.4883846,-2.5834351)">
+    <path
+       d="m 134.28803,433.19162 c 0,-218.11528 163.58646,-272.6441 245.37969,-354.43732 0,136.32204 -27.26441,245.37968 -136.32205,299.9085"
+       fill="none"
+       stroke="url(#g23)"
+       stroke-width="10.9058"
+       stroke-linecap="round"
+       id="path2"
+       style="opacity:0.999;stroke:url(#linearGradient4)" />
+    <path
+       d="M 134.28803,431.94501 C 183.83042,337.1233 245.83889,262.90175 327.63212,224.88823"
+       fill="none"
+       stroke="url(#g23)"
+       stroke-width="8.17932"
+       stroke-linecap="round"
+       opacity="0.5"
+       id="path3"
+       style="opacity:0.884;stroke:url(#linearGradient5)"
+       sodipodi:nodetypes="cc" />
+    <circle
+       cx="134.28802"
+       cy="433.19162"
+       r="18.385414"
+       fill="#10b981"
+       id="circle4"
+       style="opacity:0.999;stroke-width:2.29818" />
+  </g>
+</svg>
