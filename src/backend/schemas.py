@@ -62,19 +62,6 @@ class EnergyResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Heating Cycles
-# ---------------------------------------------------------------------------
-
-class HeatingCycleOut(BaseModel):
-    id: int
-    start_time: datetime
-    end_time: Optional[datetime]
-    duration_seconds: Optional[int]
-    mode: str
-    setpoint_at_start: float
-
-
-# ---------------------------------------------------------------------------
 # Control
 # ---------------------------------------------------------------------------
 

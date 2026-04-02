@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — WattWise{% endblock %}
+{% block title %}Dashboard — EcoNet Monitor{% endblock %}
 
 {% block content %}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
@@ -89,21 +89,6 @@
   </div>
 </div>
 
-<!-- Recent cycles -->
-<div class="section card">
-  <div class="section-header">
-    <span class="section-title">Recent Heating Cycles</span>
-    <span id="cycle-count" class="badge badge--unknown">—</span>
-  </div>
-  <table class="data-table">
-    <thead>
-      <tr><th>Started</th><th>Duration</th><th>Mode</th><th>Setpoint</th></tr>
-    </thead>
-    <tbody id="cycles-body">
-      <tr><td colspan="4" style="color:var(--text-muted);text-align:center">Loading…</td></tr>
-    </tbody>
-  </table>
-</div>
 {% endblock %}
 
 {% block scripts %}
