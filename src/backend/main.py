@@ -17,6 +17,7 @@ from .database import close_db, init_db
 from .econet_client import EcoNetClient
 from .poller import Poller
 from .routes_api import router as api_router, set_client
+from .routes_auth import router as auth_router
 from .routes_pages import router as pages_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -84,7 +85,7 @@ app.add_middleware(
     allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -105,6 +106,7 @@ if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
 app.include_router(api_router)
+app.include_router(auth_router)
 app.include_router(pages_router)
 
 

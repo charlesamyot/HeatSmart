@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}EcoNet Monitor{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/style.css">
+  <meta name="supabase-url" content="{{ supabase_url or '' }}">
+  <meta name="supabase-anon-key" content="{{ supabase_key or '' }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     (function() {
@@ -228,6 +230,7 @@
   checkBackfill();
   setInterval(checkBackfill, 3000);
   </script>
+  <script src="/static/js/auth.js"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>
