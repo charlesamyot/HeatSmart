@@ -1,24 +1,27 @@
-"""py2app setup for HeatSmart menu bar app."""
+"""py2app setup for WattWise native windowed app."""
 from setuptools import setup
 
-APP = ['heatsmart_menubar.py']
+APP = ['wattwise_app.py']
 OPTIONS = {
     'argv_emulation': False,
     'plist': {
-        'CFBundleName': 'HeatSmart',
-        'CFBundleDisplayName': 'HeatSmart',
-        'CFBundleIdentifier': 'app.heatsmart.menubar',
-        'CFBundleVersion': '1.0.0',
-        'CFBundleShortVersionString': '1.0.0',
-        'LSUIElement': True,  # Menu bar app — no Dock icon
+        'CFBundleName': 'WattWise',
+        'CFBundleDisplayName': 'WattWise',
+        'CFBundleIdentifier': 'app.wattwise.desktop',
+        'CFBundleVersion': '1.1.0',
+        'CFBundleShortVersionString': '1.1.0',
+        'LSUIElement': False,  # Native windowed app — show in Dock
         'NSHighResolutionCapable': True,
+        'NSAppTransportSecurity': {
+            'NSAllowsLocalNetworking': True,
+        },
     },
-    'packages': ['rumps'],
+    'packages': ['webview'],
 }
 
 setup(
     app=APP,
-    name='HeatSmart',
+    name='WattWise',
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
 )

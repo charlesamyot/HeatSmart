@@ -1,5 +1,5 @@
-// HeatSmart Service Worker — offline caching + background sync
-const CACHE_NAME = 'heatsmart-v1';
+// WattWise Service Worker — offline caching + background sync
+const CACHE_NAME = 'wattwise-v1';
 const STATIC_ASSETS = [
   '/',
   '/dashboard',
