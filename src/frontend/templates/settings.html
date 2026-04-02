@@ -4,140 +4,104 @@
 {% block content %}
 <h1 class="page-title">Settings</h1>
 
-<!-- Device info card — full width -->
-<div class="card section" id="device-card" style="display:none">
+<!-- Locations -->
+<div class="card section">
   <div class="section-header">
-    <span class="section-title" id="device-title">Water Heater</span>
-    <span id="device-connected" class="badge badge--unknown">—</span>
+    <span class="section-title">Locations</span>
+    <button class="btn btn--primary btn--sm" onclick="toggleLocationForm()">+ Add Location</button>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem 1.5rem">
-    <div>
-      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Location</div>
-      <div id="device-location" style="font-weight:600;margin-top:.15rem">—</div>
+  <div id="location-form" style="display:none;margin-bottom:1rem;padding:1rem;border:1px solid var(--border);border-radius:var(--radius)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 1rem">
+      <div class="form-group">
+        <label class="form-label" for="loc-name">Name</label>
+        <input type="text" id="loc-name" class="form-input" placeholder="Home, Office, etc.">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="loc-address">Address</label>
+        <input type="text" id="loc-address" class="form-input" placeholder="123 Main St">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="loc-city">City</label>
+        <input type="text" id="loc-city" class="form-input" placeholder="Seattle">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="loc-state">State / Province</label>
+        <input type="text" id="loc-state" class="form-input" placeholder="WA">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="loc-zip">ZIP / Postal Code</label>
+        <input type="text" id="loc-zip" class="form-input" placeholder="98101">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="loc-country">Country</label>
+        <select class="form-select" id="loc-country">
+          <option value="US">United States</option>
+          <option value="CA">Canada</option>
+          <option value="GB">United Kingdom</option>
+          <option value="DE">Germany</option>
+          <option value="FR">France</option>
+        </select>
+      </div>
     </div>
-    <div>
-      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Model / Type</div>
-      <div id="device-type" style="font-weight:600;margin-top:.15rem">—</div>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn btn--primary btn--sm" onclick="saveLocation()">Save Location</button>
+      <button class="btn btn--outline btn--sm" onclick="toggleLocationForm()">Cancel</button>
     </div>
-    <div>
-      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Status</div>
-      <div id="device-running" style="font-weight:600;margin-top:.15rem">—</div>
+  </div>
+  <div id="location-list" style="font-size:.85rem;color:var(--text-muted)">Loading...</div>
+</div>
+
+<!-- Account -->
+<div class="card section" id="account-section" style="display:none">
+  <div class="section-title" style="margin-bottom:1rem">Account</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 1.5rem">
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <div id="account-email" style="font-weight:600;font-size:.9rem;padding:.5rem 0">—</div>
     </div>
-    <div>
-      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Firmware</div>
-      <div id="device-firmware" style="font-size:.85rem;margin-top:.15rem">—</div>
+    <div class="form-group">
+      <label class="form-label">Display Name</label>
+      <input type="text" id="account-name" class="form-input" placeholder="Your name">
     </div>
-    <div>
-      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">MQTT</div>
-      <div id="device-mqtt" style="font-size:.85rem;margin-top:.15rem">—</div>
-    </div>
-    <div>
-      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Account</div>
-      <div id="device-account" style="font-size:.85rem;margin-top:.15rem;word-break:break-all">—</div>
-    </div>
-    <div>
-      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Serial Number</div>
-      <div id="device-serial" style="font-size:.82rem;margin-top:.15rem;font-family:monospace">—</div>
-    </div>
-    <div>
-      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">MAC Address</div>
-      <div id="device-mac" style="font-size:.82rem;margin-top:.15rem;font-family:monospace">—</div>
-    </div>
-    <div>
-      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">ClearBlade ID</div>
-      <div id="device-cbid" style="font-size:.82rem;margin-top:.15rem;font-family:monospace">—</div>
+  </div>
+  <div style="display:flex;gap:.75rem;align-items:center;margin-bottom:1.25rem">
+    <button class="btn btn--primary btn--sm" onclick="saveProfile()">Save Profile</button>
+    <a href="/logout" onclick="supabaseAuth.clearSession()" class="btn btn--outline btn--sm" style="color:var(--danger);border-color:var(--danger);text-decoration:none">Sign Out</a>
+  </div>
+  <div style="border-top:1px solid var(--border);padding-top:1rem">
+    <div style="font-weight:600;font-size:.9rem;margin-bottom:.75rem">Change Password</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 1rem">
+      <div class="form-group">
+        <label class="form-label" for="account-new-password">New Password</label>
+        <input type="password" id="account-new-password" class="form-input" placeholder="New password (6+ chars)">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="account-confirm-password">Confirm Password</label>
+        <input type="password" id="account-confirm-password" class="form-input" placeholder="Confirm new password">
+      </div>
+      <div class="form-group" style="display:flex;align-items:end">
+        <button class="btn btn--outline btn--sm" onclick="changePassword()">Update Password</button>
+      </div>
     </div>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
-
-  <!-- EcoNet credentials -->
-  <div class="card">
-    <div class="section-title" style="margin-bottom:1rem">EcoNet Account</div>
-    <div class="form-group">
-      <label class="form-label" for="cred-email">Email</label>
-      <input type="email" id="cred-email" class="form-input" placeholder="your@email.com">
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="cred-password">Password</label>
-      <div class="input-group">
-        <input type="password" id="cred-password" class="form-input" placeholder="Enter password">
-        <button class="btn btn--outline btn--sm" type="button" onclick="togglePasswordVisibility()" id="pw-toggle-btn"
-                title="Show/hide password" style="border-left:none">Show</button>
-      </div>
-    </div>
-    <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
-      <button class="btn btn--primary" onclick="saveCredentials()">Save &amp; Connect</button>
-      <span id="cred-status" class="badge badge--unknown" style="display:none"></span>
-    </div>
-    <div id="cred-error" class="alert alert--error" style="display:none;margin-top:.75rem"></div>
-  </div>
-
-  <!-- System status -->
-  <div class="card">
-    <div class="section-title" style="margin-bottom:1rem">System Status</div>
-    <table class="data-table">
-      <tbody>
-        <tr><td style="color:var(--text-muted)">Connection</td>
-            <td><span id="sys-connected" class="badge badge--unknown">—</span></td></tr>
-        <tr><td style="color:var(--text-muted)">MQTT</td>
-            <td><span id="sys-mqtt" class="badge badge--unknown">—</span></td></tr>
-        <tr><td style="color:var(--text-muted)">Last poll</td>
-            <td id="sys-last-poll">—</td></tr>
-        <tr><td style="color:var(--text-muted)">Last error</td>
-            <td id="sys-error" style="color:var(--danger);font-size:.82rem">—</td></tr>
-      </tbody>
-    </table>
-    <button class="btn btn--outline btn--sm" style="margin-top:.75rem" onclick="loadStatus()">Refresh</button>
-  </div>
-
-</div>
-
-<!-- Comfort preferences — full width, 2-column layout -->
-<div class="card section" style="margin-top:1.25rem">
-  <div class="section-title" style="margin-bottom:1rem">Comfort Preferences</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 2rem">
-    <div class="form-group">
-      <label class="form-label">Preferred setpoint (°F)</label>
-      <input type="number" id="pref-setpoint" class="form-input" min="110" max="140" value="120">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Minimum acceptable temp (°F)</label>
-      <input type="number" id="pref-min-temp" class="form-input" min="90" max="130" value="110">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Max recovery time (minutes)</label>
-      <input type="number" id="pref-recovery" class="form-input" min="10" max="240" value="60">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Away setpoint (°F, optional)</label>
-      <input type="number" id="pref-away" class="form-input" min="90" max="130" placeholder="Leave blank to disable">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Your timezone</label>
-      <select class="form-select" id="pref-timezone">
-        <option value="America/Los_Angeles">Pacific (PT)</option>
-        <option value="America/Denver">Mountain (MT)</option>
-        <option value="America/Chicago">Central (CT)</option>
-        <option value="America/New_York">Eastern (ET)</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Device registered timezone</label>
-      <select class="form-select" id="pref-device-tz">
-        <option value="America/New_York">Eastern (ET) — ClearBlade default</option>
-        <option value="America/Chicago">Central (CT)</option>
-        <option value="America/Denver">Mountain (MT)</option>
-        <option value="America/Los_Angeles">Pacific (PT)</option>
-      </select>
-      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem">
-        ClearBlade registers devices as ET by default. If your hours look shifted, adjust this.
-      </div>
-    </div>
-  </div>
-  <button class="btn btn--primary" onclick="savePreferences()">Save Preferences</button>
-  <span id="pref-status" style="display:none;margin-left:.75rem;font-size:.85rem;color:var(--success)">Saved</span>
+<!-- App status -->
+<div class="card section">
+  <div class="section-title" style="margin-bottom:1rem">App Status</div>
+  <table class="data-table">
+    <tbody>
+      <tr><td style="color:var(--text-muted)">Connection</td>
+          <td><span id="sys-connected" class="badge badge--unknown">—</span></td></tr>
+      <tr><td style="color:var(--text-muted)">MQTT</td>
+          <td><span id="sys-mqtt" class="badge badge--unknown">—</span></td></tr>
+      <tr><td style="color:var(--text-muted)">Last poll</td>
+          <td id="sys-last-poll">—</td></tr>
+      <tr><td style="color:var(--text-muted)">Last error</td>
+          <td id="sys-error" style="color:var(--danger);font-size:.82rem">—</td></tr>
+    </tbody>
+  </table>
+  <button class="btn btn--outline btn--sm" style="margin-top:.75rem" onclick="loadStatus()">Refresh</button>
 </div>
 
 <!-- TOU Rate Schedule — full width -->
@@ -145,7 +109,8 @@
   <div class="section-header">
     <span class="section-title">TOU Rate Schedule</span>
     <div style="display:flex;gap:.5rem">
-      <button class="btn btn--outline btn--sm" onclick="toggleTouEditor()">Edit Rates</button>
+      <button class="btn btn--primary btn--sm" onclick="toggleTouPicker()">Find Utility Rates</button>
+      <button class="btn btn--outline btn--sm" onclick="toggleTouEditor()">Edit Manually</button>
     </div>
   </div>
 
@@ -157,6 +122,62 @@
   </div>
   <div id="tou-heatmap" class="tou-heatmap" style="margin-bottom:1rem">
     <!-- Rendered by JS -->
+  </div>
+
+  <!-- TOU Rate Picker — lookup from utility database -->
+  <div id="tou-picker" style="display:none;margin-bottom:1rem;padding:1rem;border:1px solid var(--border);border-radius:var(--radius)">
+    <div class="section-title" style="margin-bottom:.75rem">Find Your Utility Rate Plan</div>
+
+    <!-- ZIP code quick lookup -->
+    <div style="display:flex;gap:.75rem;align-items:end;margin-bottom:1rem">
+      <div class="form-group" style="margin-bottom:0;flex:0 0 180px">
+        <label class="form-label" for="tou-zip">ZIP Code Lookup</label>
+        <input type="text" id="tou-zip" class="form-input" placeholder="e.g. 98101" maxlength="10">
+      </div>
+      <button class="btn btn--primary btn--sm" onclick="lookupByZip()" style="height:38px">Look Up</button>
+      <span style="color:var(--text-muted);font-size:.82rem;padding-bottom:.3rem">or browse below</span>
+    </div>
+
+    <!-- Cascade dropdowns -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.75rem">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label" for="tou-country">Country</label>
+        <select class="form-select" id="tou-country" onchange="onPickerCountry()">
+          <option value="">Select country...</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label" for="tou-region">Region / State</label>
+        <select class="form-select" id="tou-region" onchange="onPickerRegion()" disabled>
+          <option value="">Select region...</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label" for="tou-utility">Utility</label>
+        <select class="form-select" id="tou-utility" onchange="onPickerUtility()" disabled>
+          <option value="">Select utility...</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label" for="tou-plan">Rate Plan</label>
+        <select class="form-select" id="tou-plan" onchange="onPickerPlan()" disabled>
+          <option value="">Select plan...</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Rate plan preview and apply -->
+    <div id="tou-picker-preview" style="display:none;margin-top:1rem">
+      <div style="font-weight:600;font-size:.9rem;margin-bottom:.5rem" id="tou-picker-plan-name"></div>
+      <table class="data-table" id="tou-picker-blocks">
+        <thead><tr><th>Tier</th><th>Hours</th><th>Rate ($/kWh)</th><th>Days</th></tr></thead>
+        <tbody id="tou-picker-blocks-body"></tbody>
+      </table>
+      <div style="margin-top:.75rem;display:flex;gap:.5rem">
+        <button class="btn btn--primary btn--sm" onclick="applyPickerRates()">Apply This Rate Plan</button>
+        <button class="btn btn--outline btn--sm" onclick="toggleTouPicker()">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <!-- Editable rate table (hidden by default) -->
@@ -174,20 +195,6 @@
       <button class="btn btn--outline btn--sm" onclick="toggleTouEditor()">Cancel</button>
     </div>
   </div>
-</div>
-
-<!-- Cloud Sync -->
-<div class="card section" style="margin-top:1.25rem">
-  <div class="section-title" style="margin-bottom:1rem">Cloud Sync</div>
-  <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem">
-    Sync your history data to Supabase for cloud backup and cross-device access.
-    Sign in first to enable sync.
-  </p>
-  <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
-    <button class="btn btn--primary btn--sm" onclick="syncToCloud()" id="sync-btn">Sync Now</button>
-    <span id="sync-status" style="font-size:.85rem;color:var(--text-muted)"></span>
-  </div>
-  <div id="sync-result" style="display:none;margin-top:.75rem;padding:.75rem;border-radius:var(--radius);background:var(--surface-alt);font-size:.82rem"></div>
 </div>
 
 <!-- Debug tools — collapsible drawer -->
@@ -226,19 +233,6 @@ let touRatesCache = [];
 function pad(h) { return String(h).padStart(2,'0'); }
 function formatDays(str) { return str.split(',').map(d => DAY_NAMES[+d] || d).join(', '); }
 
-// ---- Password show/hide ----
-function togglePasswordVisibility() {
-  const input = document.getElementById('cred-password');
-  const btn = document.getElementById('pw-toggle-btn');
-  if (input.type === 'password') {
-    input.type = 'text';
-    btn.textContent = 'Hide';
-  } else {
-    input.type = 'password';
-    btn.textContent = 'Show';
-  }
-}
-
 // ---- Status ----
 async function loadStatus() {
   const r = await fetch('/api/config/status');
@@ -249,63 +243,6 @@ async function loadStatus() {
   document.getElementById('sys-mqtt').textContent = d.mqtt_connected ? 'Live' : 'Polling';
   document.getElementById('sys-last-poll').textContent = d.last_poll ? new Date(d.last_poll).toLocaleTimeString() : '—';
   document.getElementById('sys-error').textContent = d.last_error || 'None';
-}
-
-// ---- Credentials ----
-async function saveCredentials() {
-  const email = document.getElementById('cred-email').value.trim();
-  const password = document.getElementById('cred-password').value;
-  const statusEl = document.getElementById('cred-status');
-  const errorEl = document.getElementById('cred-error');
-  errorEl.style.display = 'none';
-  if (!email || !password) { showToast('Email and password are required.', 'warn'); return; }
-  statusEl.style.display = 'inline-block';
-  statusEl.className = 'badge badge--unknown';
-  statusEl.textContent = 'Connecting…';
-  try {
-    const r = await fetch('/api/config/credentials', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({email, password}),
-    });
-    if (r.ok) {
-      statusEl.className = 'badge badge--ok';
-      statusEl.textContent = 'Connected';
-      showToast('Connected to EcoNet.', 'success');
-    } else {
-      const d = await r.json();
-      statusEl.className = 'badge badge--error';
-      statusEl.textContent = 'Failed';
-      errorEl.textContent = d.detail || 'Authentication failed';
-      errorEl.style.display = 'block';
-    }
-  } catch (e) {
-    statusEl.className = 'badge badge--error';
-    statusEl.textContent = 'Error';
-  }
-}
-
-// ---- Preferences ----
-async function loadPreferences() {
-  const r = await fetch('/api/config/preferences');
-  const d = await r.json();
-  document.getElementById('pref-setpoint').value = d.preferred_setpoint;
-  document.getElementById('pref-min-temp').value = d.min_acceptable_temp;
-  document.getElementById('pref-recovery').value = d.max_recovery_minutes;
-  if (d.away_setpoint) document.getElementById('pref-away').value = d.away_setpoint;
-}
-
-async function savePreferences() {
-  const body = {
-    preferred_setpoint: +document.getElementById('pref-setpoint').value,
-    min_acceptable_temp: +document.getElementById('pref-min-temp').value,
-    max_recovery_minutes: +document.getElementById('pref-recovery').value,
-    away_setpoint: document.getElementById('pref-away').value ? +document.getElementById('pref-away').value : null,
-  };
-  const r = await fetch('/api/config/preferences', {
-    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
-  });
-  if (r.ok) { showToast('Preferences saved.', 'success'); }
-  else { showToast('Failed to save preferences.', 'error'); }
 }
 
 // ---- TOU Rates ----
@@ -409,6 +346,183 @@ async function saveTouRates() {
   }
 }
 
+// ---- TOU Picker (utility database lookup) ----
+let touPickerVisible = false;
+let pickerPlansCache = [];
+let pickerBlocksCache = [];
+
+function toggleTouPicker() {
+  touPickerVisible = !touPickerVisible;
+  document.getElementById('tou-picker').style.display = touPickerVisible ? 'block' : 'none';
+  if (touPickerVisible && document.getElementById('tou-country').options.length <= 1) {
+    loadPickerCountries();
+  }
+}
+
+async function loadPickerCountries() {
+  try {
+    const r = await fetch('/api/tou/countries');
+    if (!r.ok) { showToast('Failed to load countries', 'error'); return; }
+    const countries = await r.json();
+    const sel = document.getElementById('tou-country');
+    sel.innerHTML = '<option value="">Select country...</option>';
+    countries.forEach(c => {
+      sel.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+    });
+  } catch (e) { showToast('Error loading countries: ' + e.message, 'error'); }
+}
+
+async function onPickerCountry() {
+  const code = document.getElementById('tou-country').value;
+  const regionSel = document.getElementById('tou-region');
+  const utilitySel = document.getElementById('tou-utility');
+  const planSel = document.getElementById('tou-plan');
+  regionSel.innerHTML = '<option value="">Select region...</option>';
+  regionSel.disabled = true;
+  utilitySel.innerHTML = '<option value="">Select utility...</option>';
+  utilitySel.disabled = true;
+  planSel.innerHTML = '<option value="">Select plan...</option>';
+  planSel.disabled = true;
+  document.getElementById('tou-picker-preview').style.display = 'none';
+  if (!code) return;
+  try {
+    const r = await fetch(`/api/tou/regions?country=${encodeURIComponent(code)}`);
+    if (!r.ok) return;
+    const regions = await r.json();
+    regions.forEach(reg => {
+      regionSel.innerHTML += `<option value="${reg.id}">${reg.name}</option>`;
+    });
+    regionSel.disabled = false;
+  } catch {}
+}
+
+async function onPickerRegion() {
+  const regionId = document.getElementById('tou-region').value;
+  const utilitySel = document.getElementById('tou-utility');
+  const planSel = document.getElementById('tou-plan');
+  utilitySel.innerHTML = '<option value="">Select utility...</option>';
+  utilitySel.disabled = true;
+  planSel.innerHTML = '<option value="">Select plan...</option>';
+  planSel.disabled = true;
+  document.getElementById('tou-picker-preview').style.display = 'none';
+  if (!regionId) return;
+  try {
+    const r = await fetch(`/api/tou/utilities?region_id=${regionId}`);
+    if (!r.ok) return;
+    const utils = await r.json();
+    utils.forEach(u => {
+      utilitySel.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+    });
+    utilitySel.disabled = false;
+  } catch {}
+}
+
+async function onPickerUtility() {
+  const utilityId = document.getElementById('tou-utility').value;
+  const planSel = document.getElementById('tou-plan');
+  planSel.innerHTML = '<option value="">Select plan...</option>';
+  planSel.disabled = true;
+  document.getElementById('tou-picker-preview').style.display = 'none';
+  if (!utilityId) return;
+  try {
+    const r = await fetch(`/api/tou/rates?utility_id=${utilityId}`);
+    if (!r.ok) return;
+    const data = await r.json();
+    pickerPlansCache = data.plans || [];
+    pickerBlocksCache = data.blocks || [];
+    pickerPlansCache.forEach(p => {
+      planSel.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+    });
+    planSel.disabled = false;
+    // Auto-select if only one plan
+    if (pickerPlansCache.length === 1) {
+      planSel.value = pickerPlansCache[0].id;
+      onPickerPlan();
+    }
+  } catch {}
+}
+
+function onPickerPlan() {
+  const planId = document.getElementById('tou-plan').value;
+  const preview = document.getElementById('tou-picker-preview');
+  if (!planId) { preview.style.display = 'none'; return; }
+  const plan = pickerPlansCache.find(p => String(p.id) === planId);
+  const blocks = pickerBlocksCache.filter(b => String(b.rate_plan_id) === planId);
+  if (!plan || !blocks.length) { preview.style.display = 'none'; return; }
+  document.getElementById('tou-picker-plan-name').textContent = plan.name + (plan.description ? ' — ' + plan.description : '');
+  const tbody = document.getElementById('tou-picker-blocks-body');
+  tbody.innerHTML = blocks.map(b => `
+    <tr>
+      <td style="font-weight:600">${b.name}</td>
+      <td>${pad(b.start_hour)}:00 – ${pad(b.end_hour)}:00</td>
+      <td>$${b.rate_per_kwh.toFixed(4)}</td>
+      <td>${b.days_of_week ? formatDays(b.days_of_week) : 'All'}</td>
+    </tr>
+  `).join('');
+  preview.style.display = 'block';
+}
+
+async function lookupByZip() {
+  const zip = document.getElementById('tou-zip').value.trim();
+  if (!zip || zip.length < 5) { showToast('Enter a valid ZIP code', 'error'); return; }
+  try {
+    const r = await fetch(`/api/tou/lookup?zip=${encodeURIComponent(zip)}`);
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      showToast(d.detail || 'No utility found for this ZIP', 'error');
+      return;
+    }
+    const rows = await r.json();
+    if (!rows.length) { showToast('No utility found for this ZIP', 'error'); return; }
+    const utilityId = rows[0].utility_id;
+    const utilityInfo = rows[0].tou_utilities;
+    // Jump straight to loading rates for this utility
+    showToast(`Found: ${utilityInfo?.name || 'Utility ' + utilityId}`, 'success');
+    // Load rates directly
+    const rr = await fetch(`/api/tou/rates?utility_id=${utilityId}`);
+    if (!rr.ok) return;
+    const data = await rr.json();
+    pickerPlansCache = data.plans || [];
+    pickerBlocksCache = data.blocks || [];
+    const planSel = document.getElementById('tou-plan');
+    planSel.innerHTML = '<option value="">Select plan...</option>';
+    pickerPlansCache.forEach(p => {
+      planSel.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+    });
+    planSel.disabled = false;
+    if (pickerPlansCache.length === 1) {
+      planSel.value = pickerPlansCache[0].id;
+      onPickerPlan();
+    }
+  } catch (e) { showToast('Lookup error: ' + e.message, 'error'); }
+}
+
+async function applyPickerRates() {
+  const planId = document.getElementById('tou-plan').value;
+  const blocks = pickerBlocksCache.filter(b => String(b.rate_plan_id) === planId);
+  if (!blocks.length) { showToast('No rate blocks to apply', 'error'); return; }
+  // Convert picker blocks to local TOU rate format
+  const rates = blocks.map(b => ({
+    name: b.name,
+    start_hour: b.start_hour,
+    end_hour: b.end_hour,
+    rate_per_kwh: b.rate_per_kwh,
+    days_of_week: b.days_of_week || '0,1,2,3,4,5,6',
+    holiday_exception: false,
+  }));
+  const r = await fetch('/api/config/tou-rates', {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(rates),
+  });
+  if (r.ok) {
+    touRatesCache = await r.json();
+    renderTouHeatmap(touRatesCache);
+    toggleTouPicker();
+    showToast('Rate plan applied successfully', 'success');
+  } else {
+    showToast('Failed to apply rate plan', 'error');
+  }
+}
+
 // ---- Debug panel ----
 function toggleDebugPanel() {
   const panel = document.getElementById('debug-panel');
@@ -451,81 +565,125 @@ function copyDebugOutput() {
   });
 }
 
-// ---- Device info ----
-async function loadDeviceInfo() {
-  try {
-    const r = await fetch('/api/device');
-    if (!r.ok) { document.getElementById('device-card').style.display = 'none'; return; }
-    const d = await r.json();
-    document.getElementById('device-card').style.display = 'block';
-    document.getElementById('device-title').textContent = d.name || 'Water Heater';
-    const connBadge = document.getElementById('device-connected');
-    connBadge.textContent = d.connected ? 'Connected' : 'Offline';
-    connBadge.className = d.connected ? 'badge badge--ok' : 'badge badge--error';
-    const loc = d.location;
-    document.getElementById('device-location').textContent = loc ? `${loc.city}, ${loc.state} ${loc.zipcode}` : '—';
-    const typeLabels = {heatpumpWaterHeaterGen5: 'Heat Pump WH (Gen 5)', WH: 'Water Heater'};
-    document.getElementById('device-type').textContent = typeLabels[d.equipment_type] || d.equipment_type || d.device_type || '—';
-    document.getElementById('device-running').innerHTML = d.running
-      ? `<span style="color:var(--success)">${d.running_state || 'Running'}</span>`
-      : '<span style="color:var(--text-muted)">Idle</span>';
-    document.getElementById('device-firmware').textContent = d.firmware || '—';
-    document.getElementById('device-mqtt').innerHTML = d.mqtt_connected
-      ? '<span style="color:var(--success)">Live</span>'
-      : '<span style="color:var(--warn)">Polling only</span>';
-    document.getElementById('device-account').textContent = d.econet_email || '—';
-    document.getElementById('device-serial').textContent = d.device_id || '—';
-    document.getElementById('device-mac').textContent = d.mac_address || '—';
-    document.getElementById('device-cbid').textContent = d.device_name || '—';
-  } catch (e) {
-    document.getElementById('device-card').style.display = 'none';
+// ---- Account ----
+async function loadAccount() {
+  if (!supabaseAuth.isAuthenticated()) return;
+  document.getElementById('account-section').style.display = 'block';
+  const user = await supabaseAuth.getUser();
+  if (user) {
+    document.getElementById('account-email').textContent = user.email || '—';
+    document.getElementById('account-name').value = user.user_metadata?.display_name || '';
   }
 }
 
-// ---- Cloud Sync ----
-async function syncToCloud() {
-  const btn = document.getElementById('sync-btn');
-  const statusEl = document.getElementById('sync-status');
-  const resultEl = document.getElementById('sync-result');
-
-  if (!supabaseAuth.isAuthenticated()) {
-    showToast('Sign in first to enable cloud sync.', 'warn');
-    return;
+async function changePassword() {
+  const newPw = document.getElementById('account-new-password').value;
+  const confirm = document.getElementById('account-confirm-password').value;
+  if (newPw.length < 6) { showToast('Password must be 6+ characters', 'error'); return; }
+  if (newPw !== confirm) { showToast('Passwords do not match', 'error'); return; }
+  const token = supabaseAuth.getToken();
+  if (!token) { showToast('Not signed in', 'error'); return; }
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    method: 'PUT',
+    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: newPw }),
+  });
+  if (r.ok) {
+    showToast('Password updated', 'success');
+    document.getElementById('account-new-password').value = '';
+    document.getElementById('account-confirm-password').value = '';
+  } else {
+    showToast('Failed to update password', 'error');
   }
+}
 
-  btn.disabled = true;
-  statusEl.textContent = 'Syncing...';
-  resultEl.style.display = 'none';
+async function saveProfile() {
+  const name = document.getElementById('account-name').value.trim();
+  const token = supabaseAuth.getToken();
+  if (!token) return;
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    method: 'PUT',
+    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: { display_name: name } }),
+  });
+  if (r.ok) showToast('Profile saved', 'success');
+  else showToast('Failed to save profile', 'error');
+}
 
+// ---- Locations ----
+function toggleLocationForm() {
+  const form = document.getElementById('location-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function loadLocations() {
   try {
-    const r = await fetch('/api/sync', { method: 'POST' });
-    const data = await r.json();
-
-    if (r.ok) {
-      statusEl.textContent = `Synced ${data.total_synced} records`;
-      statusEl.style.color = 'var(--success)';
-      resultEl.style.display = 'block';
-      resultEl.innerHTML = Object.entries(data.details || {}).map(([k, v]) =>
-        `<div><strong>${k}:</strong> ${v.synced} records${v.error ? ` <span style="color:var(--danger)">(${v.error})</span>` : ''}</div>`
-      ).join('');
-      if (data.total_synced > 0) showToast(`Synced ${data.total_synced} records to cloud.`, 'success');
-    } else {
-      statusEl.textContent = data.detail || 'Sync failed';
-      statusEl.style.color = 'var(--danger)';
+    const r = await fetch('/api/locations');
+    if (!r.ok) { document.getElementById('location-list').textContent = 'Failed to load'; return; }
+    const locs = await r.json();
+    const el = document.getElementById('location-list');
+    if (!locs.length) {
+      el.innerHTML = '<p style="color:var(--text-muted)">No locations added yet. Add your home to auto-match TOU rates.</p>';
+      return;
     }
-  } catch (e) {
-    statusEl.textContent = `Error: ${e.message}`;
-    statusEl.style.color = 'var(--danger)';
-  } finally {
-    btn.disabled = false;
+    el.innerHTML = locs.map(l => `
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:1rem">${l.is_primary ? '★' : '☆'}</span>
+        <div style="flex:1">
+          <div style="font-weight:600">${l.name}</div>
+          <div style="font-size:.78rem;color:var(--text-muted)">${[l.city, l.state, l.zip_code].filter(Boolean).join(', ') || 'No address'}</div>
+        </div>
+        ${l.utility_name ? `<span class="badge badge--ok" style="font-size:.7rem">${l.utility_name}</span>` : ''}
+        ${!l.is_primary ? `<button class="btn btn--outline btn--sm" style="font-size:.7rem;padding:.15rem .4rem" onclick="setPrimaryLocation(${l.id})">Set Primary</button>` : ''}
+        <button class="btn btn--outline btn--sm" style="font-size:.7rem;padding:.15rem .4rem;color:var(--danger);border-color:var(--danger)" onclick="deleteLocation(${l.id},'${l.name}')">Remove</button>
+      </div>
+    `).join('');
+  } catch { document.getElementById('location-list').textContent = 'Error loading locations'; }
+}
+
+async function saveLocation() {
+  const body = {
+    name: document.getElementById('loc-name').value.trim(),
+    address: document.getElementById('loc-address').value.trim() || null,
+    city: document.getElementById('loc-city').value.trim() || null,
+    state: document.getElementById('loc-state').value.trim() || null,
+    zip_code: document.getElementById('loc-zip').value.trim() || null,
+    country: document.getElementById('loc-country').value,
+  };
+  if (!body.name) { showToast('Name is required', 'error'); return; }
+  const r = await fetch('/api/locations', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (r.ok) {
+    showToast('Location added', 'success');
+    toggleLocationForm();
+    document.getElementById('loc-name').value = '';
+    document.getElementById('loc-address').value = '';
+    document.getElementById('loc-city').value = '';
+    document.getElementById('loc-state').value = '';
+    document.getElementById('loc-zip').value = '';
+    loadLocations();
+  } else {
+    showToast('Failed to add location', 'error');
   }
+}
+
+async function deleteLocation(id, name) {
+  if (!confirm(`Remove "${name}"?`)) return;
+  const r = await fetch(`/api/locations/${id}`, { method: 'DELETE' });
+  if (r.ok) { showToast('Location removed', 'success'); loadLocations(); }
+  else showToast('Failed to remove', 'error');
+}
+
+async function setPrimaryLocation(id) {
+  const r = await fetch(`/api/locations/${id}/set-primary`, { method: 'POST' });
+  if (r.ok) { showToast('Primary location updated', 'success'); loadLocations(); }
+  else showToast('Failed to update', 'error');
 }
 
 // ---- Init ----
-loadDeviceInfo();
+loadAccount();
 loadStatus();
-loadPreferences();
 loadTouRates();
+loadLocations();
 setInterval(loadStatus, 30000);
 </script>
 {% endblock %}

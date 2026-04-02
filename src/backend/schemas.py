@@ -61,6 +61,7 @@ class EnergyResponse(BaseModel):
     total_cost: float
 
 
+
 # ---------------------------------------------------------------------------
 # Control
 # ---------------------------------------------------------------------------
@@ -176,17 +177,15 @@ class ConfigStatus(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Multi-Device Management
+# Devices
 # ---------------------------------------------------------------------------
 
 class DeviceCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=128)
     provider: Literal["econet", "smartthings", "manual"]
-    device_type: Literal[
-        "water_heater", "dishwasher", "washer", "dryer",
-        "ev_charger", "hvac", "other"
-    ] = "water_heater"
-    credentials: Optional[CredentialsIn] = None  # provider login (required for econet)
+    device_type: Literal["water_heater", "dishwasher", "washer", "dryer", "ev_charger", "hvac", "other"] = "water_heater"
+    location_id: Optional[int] = None
+    credentials: Optional[CredentialsIn] = None
 
 
 class DeviceOut(BaseModel):
@@ -194,11 +193,33 @@ class DeviceOut(BaseModel):
     name: str
     provider: str
     device_type: str
-    external_device_id: Optional[str]
+    external_device_id: Optional[str] = None
+    location_id: Optional[int] = None
     is_active: bool
     created_at: datetime
 
 
 class DeviceUpdate(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=1, max_length=128)
+    name: Optional[str] = None
+    location_id: Optional[int] = None
     is_active: Optional[bool] = None
+
+
+# ---------------------------------------------------------------------------
+# Locations
+# ---------------------------------------------------------------------------
+
+class LocationIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=128)
+    address: Optional[str] = Field(default=None, max_length=256)
+    city: Optional[str] = Field(default=None, max_length=128)
+    state: Optional[str] = Field(default=None, max_length=64)
+    zip_code: Optional[str] = Field(default=None, max_length=16)
+    country: str = Field(default="US", max_length=64)
+
+
+class LocationOut(LocationIn):
+    id: int
+    utility_name: Optional[str] = None
+    is_primary: bool = False
+    created_at: datetime

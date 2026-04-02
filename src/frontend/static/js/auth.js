@@ -1,5 +1,5 @@
 /**
- * HeatSmart Auth — Supabase authentication client
+ * WattWise Auth — Supabase authentication client
  * Loaded on login page and in base.html for session management.
  */
 
@@ -166,12 +166,18 @@ async function signInEmail() {
   if (!email || !password) { showMessage('Email and password required.', 'error'); return; }
 
   showMessage('Signing in...');
-  const data = await supabaseAuth.signInWithPassword(email, password);
-  if (data.access_token) {
-    supabaseAuth.setSession(data);
-    window.location.href = '/dashboard';
-  } else {
-    showMessage(data.error_description || data.msg || 'Sign in failed.', 'error');
+  try {
+    const data = await supabaseAuth.signInWithPassword(email, password);
+    console.log('Sign in response:', JSON.stringify(data).substring(0, 200));
+    if (data.access_token) {
+      supabaseAuth.setSession(data);
+      window.location.href = '/dashboard';
+    } else {
+      showMessage(data.error_description || data.msg || data.error || 'Sign in failed.', 'error');
+    }
+  } catch (e) {
+    console.error('Sign in error:', e);
+    showMessage('Connection error: ' + e.message, 'error');
   }
 }
 
@@ -190,6 +196,28 @@ async function signUpEmail() {
     showMessage('Account created! Check your email to confirm, then sign in.', 'success');
   } else {
     showMessage(data.error_description || data.msg || 'Sign up failed.', 'error');
+  }
+}
+
+async function resetPassword() {
+  const email = document.getElementById('login-email')?.value.trim();
+  if (!email) { showMessage('Enter your email first.', 'error'); return; }
+
+  showMessage('Sending reset link...');
+  try {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email }),
+    });
+    if (r.ok) {
+      showMessage('Password reset link sent! Check your email.', 'success');
+    } else {
+      const data = await r.json();
+      showMessage(data.error_description || data.msg || 'Failed to send reset link.', 'error');
+    }
+  } catch (e) {
+    showMessage('Connection error: ' + e.message, 'error');
   }
 }
 

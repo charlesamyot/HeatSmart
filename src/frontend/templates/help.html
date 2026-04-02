@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Help — EcoNet Monitor{% endblock %}
+{% block title %}Help — WattWise{% endblock %}
 
 {% block content %}
 <h1 class="page-title">Help</h1>
@@ -7,23 +7,58 @@
 <div style="display:grid;gap:1rem;max-width:800px">
 
   <details class="card" open>
-    <summary class="help-summary">What is this?</summary>
+    <summary class="help-summary">What is WattWise?</summary>
     <div class="help-body">
-      <p>A local web app that connects to your <strong>Rheem EcoNet heat pump water heater</strong>
-      through the same cloud backend the official EcoNet phone app uses. It gives you more granular usage tracking,
-      TOU cost breakdowns for Seattle City Light rates, and schedule optimization to save money.</p>
+      <p><strong>WattWise</strong> is a whole-home energy savings platform that monitors and optimizes your connected
+      appliances using time-of-use (TOU) electricity rates. It connects to device providers like
+      <strong>Rheem EcoNet</strong> to give you real-time control, detailed energy tracking, and smart
+      scheduling that shifts usage to cheaper off-peak hours.</p>
+      <p style="margin-top:.5rem">Key capabilities:</p>
+      <ul>
+        <li><strong>Multi-device support</strong> — manage water heaters, HVAC, EV chargers, and more from one dashboard</li>
+        <li><strong>Location management</strong> — organize devices across multiple homes or properties</li>
+        <li><strong>TOU rate service</strong> — look up your utility's rate plan by ZIP code or browse by region</li>
+        <li><strong>Savings optimizer</strong> — AI-generated schedules that minimize energy costs</li>
+        <li><strong>Supabase authentication</strong> — secure sign-in with email/password, magic link, or password reset</li>
+      </ul>
       <p style="color:var(--text-muted);margin-top:.5rem;font-size:.85rem">
-        Your data stays on your computer. The only external communication is with Rheem's ClearBlade servers
-        (the same ones the phone app talks to).</p>
+        Your data stays on your computer by default. Cloud sync via Supabase is optional.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">Devices</summary>
+    <div class="help-body">
+      <p>WattWise supports multiple devices and device types. Navigate to the <strong>Devices</strong> page to manage your connected appliances.</p>
+      <ul>
+        <li><strong>Add Device</strong> — choose a provider (EcoNet, SmartThings, or Manual), enter credentials, and WattWise will discover and register your equipment</li>
+        <li><strong>Device types</strong> — water heater, dishwasher, washer, dryer, EV charger, HVAC, and other</li>
+        <li><strong>Location assignment</strong> — assign each device to a location using the dropdown on the device card</li>
+        <li><strong>Device detail</strong> — click a device to see its full status, credentials, firmware, and comfort preferences</li>
+        <li><strong>Live status</strong> — for EcoNet devices, see real-time temperature, mode, and running state via MQTT</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">Locations</summary>
+    <div class="help-body">
+      <p>Organize your devices by physical location. Each location can have its own address, utility provider, and rate plan.</p>
+      <ul>
+        <li><strong>Add a location</strong> — go to Settings, click "+ Add Location", fill in name and address</li>
+        <li><strong>Primary location</strong> — one location is marked as primary (shown with a star). The sidebar selector lets you switch between locations.</li>
+        <li><strong>Utility auto-detection</strong> — when you enter a ZIP code, WattWise tries to match your local utility provider</li>
+        <li><strong>Assign devices</strong> — on the Devices page, use the location dropdown on each device card to assign it</li>
+      </ul>
     </div>
   </details>
 
   <details class="card">
     <summary class="help-summary">Dashboard</summary>
     <div class="help-body">
-      <p>At-a-glance view of your water heater. Shows hot water availability, setpoint, operating mode, and running status.</p>
+      <p>At-a-glance view of your primary device. Shows hot water availability, setpoint, operating mode, and running status.</p>
       <ul>
-        <li><strong>Setpoint +/−</strong> — adjusts target temperature via MQTT (110–140°F)</li>
+        <li><strong>Setpoint +/-</strong> — adjusts target temperature via MQTT (110-140 degrees F)</li>
         <li><strong>Mode popover</strong> — click to open, select a mode. Changes push to device instantly via MQTT.</li>
         <li><strong>Energy chart</strong> — hourly bars colored by TOU rate tier</li>
         <li><strong>Refresh button</strong> — forces an immediate poll from EcoNet cloud</li>
@@ -32,31 +67,55 @@
   </details>
 
   <details class="card">
-    <summary class="help-summary">Schedule</summary>
+    <summary class="help-summary">Schedule &amp; Optimizer</summary>
     <div class="help-body">
       <p>Set up to 4 temperature/mode changes per day, per day of the week.</p>
       <ul>
         <li><strong>Timeline</strong> — colored blocks across 24 hours. Click to edit. Toggle TOU overlay to see rate windows.</li>
         <li><strong>List</strong> — table view with time, setpoint, mode.</li>
         <li><strong>Week</strong> — all 7 days stacked. Click a day to edit it.</li>
-        <li><strong>Copy to…</strong> — copy one day's schedule to other days.</li>
-        <li><strong>Optimizer</strong> — analyzes TOU rates and suggests a cost-saving schedule with estimated monthly/yearly savings.</li>
+        <li><strong>Copy to...</strong> — copy one day's schedule to other days.</li>
+        <li><strong>Optimizer</strong> — analyzes your TOU rates and water usage patterns, then generates a cost-saving schedule with estimated monthly and yearly savings.</li>
       </ul>
     </div>
   </details>
 
   <details class="card">
-    <summary class="help-summary">History</summary>
+    <summary class="help-summary">History &amp; Export</summary>
     <div class="help-body">
-      <p>Historical energy consumption data.</p>
+      <p>Historical energy consumption data with TOU cost breakdown.</p>
       <ul>
         <li><strong>Hourly chart</strong> — today/yesterday kWh per hour, colored by TOU tier</li>
         <li><strong>Daily chart</strong> — stacked bars (peak/mid/off-peak) with cost line overlay</li>
         <li><strong>Export</strong> — download CSV at hourly or daily granularity, up to 2 years</li>
       </ul>
-      <p style="color:var(--text-muted);font-size:.85rem;margin-top:.5rem">
-        <strong>Note:</strong> Energy data for Gen5 firmware is tracked from heater state snapshots (running state over time),
-        not from a dedicated energy API. The EcoNet REST energy endpoints are not available for this firmware version.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">TOU Rates</summary>
+    <div class="help-body">
+      <p>WattWise uses your utility's time-of-use rate schedule to calculate energy costs and optimize device scheduling.</p>
+      <ul>
+        <li><strong>Find Utility Rates</strong> — on the Settings page, click "Find Utility Rates" to search by ZIP code or browse Country > Region > Utility > Rate Plan</li>
+        <li><strong>Apply a plan</strong> — preview rate blocks and click "Apply This Rate Plan" to set them as your local rates</li>
+        <li><strong>Edit Manually</strong> — click "Edit Manually" to add/modify rate tiers directly</li>
+        <li><strong>Heatmap</strong> — the 7-day x 24-hour grid shows which tier applies at every hour of the week</li>
+      </ul>
+      <p style="font-size:.85rem;color:var(--text-muted);margin-top:.5rem">Default rates are Seattle City Light TOU. The optimizer pre-heats during off-peak hours (often 50% cheaper than peak) and coasts on stored heat during peak.</p>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary class="help-summary">Authentication &amp; Accounts</summary>
+    <div class="help-body">
+      <p>WattWise uses <strong>Supabase Auth</strong> for user accounts. You can sign in with:</p>
+      <ul>
+        <li><strong>Email + Password</strong> — create an account on the signup page</li>
+        <li><strong>Magic Link</strong> — enter your email and receive a one-click sign-in link</li>
+        <li><strong>Password Reset</strong> — click "Forgot password?" on the login page to receive a reset link</li>
+      </ul>
+      <p style="margin-top:.5rem">Your session token is stored locally and refreshes automatically. The account menu in the sidebar shows your login status and lets you sign out.</p>
     </div>
   </details>
 
@@ -64,32 +123,17 @@
     <summary class="help-summary">Settings</summary>
     <div class="help-body">
       <ul>
-        <li><strong>Device card</strong> — shows location, model, firmware, MQTT status, serial/MAC, health</li>
-        <li><strong>EcoNet Account</strong> — same credentials as your phone app. Show/hide password supported.</li>
-        <li><strong>Comfort Preferences</strong> — preferred setpoint, minimum temp, max recovery time (used by optimizer)</li>
-        <li><strong>TOU heatmap</strong> — visual 7-day × 24-hour grid. Click "Edit Rates" to customize tiers.</li>
+        <li><strong>Locations</strong> — add, edit, and manage your physical locations</li>
+        <li><strong>Account</strong> — view your email, set display name, sign out</li>
+        <li><strong>App Status</strong> — EcoNet connection status, MQTT live/polling indicator, last poll time</li>
+        <li><strong>TOU Rate Schedule</strong> — visual heatmap, utility rate lookup, manual editor</li>
         <li><strong>Debug tools</strong> — expand the drawer to inspect MQTT status, recent messages, raw device data</li>
       </ul>
     </div>
   </details>
 
   <details class="card">
-    <summary class="help-summary">TOU Rates (Seattle City Light)</summary>
-    <div class="help-body">
-      <table class="data-table">
-        <thead><tr><th>Tier</th><th>Hours</th><th>Rate</th></tr></thead>
-        <tbody>
-          <tr><td><span style="color:var(--tou-off);font-weight:600">Off-Peak</span></td><td>Midnight – 6 AM, every day</td><td>$0.0837/kWh</td></tr>
-          <tr><td><span style="color:var(--tou-mid);font-weight:600">Mid-Peak</span></td><td>6 AM – 5 PM &amp; 9 PM – midnight (Mon–Sat); all day Sun/holidays</td><td>$0.1465/kWh</td></tr>
-          <tr><td><span style="color:var(--tou-peak);font-weight:600">Peak</span></td><td>5 PM – 9 PM, Mon–Sat (not holidays)</td><td>$0.1674/kWh</td></tr>
-        </tbody>
-      </table>
-      <p style="font-size:.85rem;color:var(--text-muted);margin-top:.5rem">Base service charge: $0.4103/day. The optimizer pre-heats during off-peak (50% cheaper than peak) and coasts on stored heat during peak.</p>
-    </div>
-  </details>
-
-  <details class="card">
-    <summary class="help-summary">Operating Modes</summary>
+    <summary class="help-summary">Operating Modes (EcoNet Water Heaters)</summary>
     <div class="help-body">
       <table class="data-table">
         <thead><tr><th>Mode</th><th>Description</th></tr></thead>
@@ -108,15 +152,14 @@
   <details class="card">
     <summary class="help-summary">How it connects</summary>
     <div class="help-body">
-      <p>Communication uses <strong>MQTT</strong> (real-time messaging) to Rheem's ClearBlade IoT platform — the same
-      backend the EcoNet phone app uses. The connection icon in the nav bar shows:</p>
+      <p>For EcoNet devices, communication uses <strong>MQTT</strong> (real-time messaging) to Rheem's ClearBlade IoT platform.
+      The connection icon in the sidebar shows:</p>
       <ul>
-        <li><span style="color:var(--success);font-weight:600">Green link</span> — connected. Hover for device summary.</li>
-        <li><span style="color:var(--danger);font-weight:600">Red</span> — disconnected. Click to go to Settings.</li>
+        <li><span style="color:var(--success);font-weight:600">Green link</span> -- connected. Hover for device summary.</li>
+        <li><span style="color:var(--danger);font-weight:600">Red</span> -- disconnected. Click to go to Settings.</li>
       </ul>
       <p style="margin-top:.5rem">Mode changes and setpoint adjustments are sent via MQTT and apply within seconds.
-      State is also polled every 5 minutes as a fallback. The REST energy/schedule APIs are not available for Gen5 firmware —
-      all data flows through MQTT.</p>
+      State is also polled every 5 minutes as a fallback.</p>
     </div>
   </details>
 
@@ -125,12 +168,13 @@
     <div class="help-body">
       <table class="data-table">
         <tbody>
-          <tr><td style="color:var(--text-muted);width:160px">Backend</td><td>Python 3.9 / FastAPI / SQLite</td></tr>
-          <tr><td style="color:var(--text-muted)">Frontend</td><td>Vanilla HTML/JS + Chart.js</td></tr>
-          <tr><td style="color:var(--text-muted)">Device API</td><td>ClearBlade MQTT (port 1884, TLS)</td></tr>
-          <tr><td style="color:var(--text-muted)">State poll</td><td>Every 5 min (REST fallback)</td></tr>
-          <tr><td style="color:var(--text-muted)">Control</td><td>MQTT publish to device/desired</td></tr>
-          <tr><td style="color:var(--text-muted)">Database</td><td>config/econet_data.db</td></tr>
+          <tr><td style="color:var(--text-muted);width:160px">Backend</td><td>Python 3.9+ / FastAPI / SQLite (local) + PostgreSQL (Supabase)</td></tr>
+          <tr><td style="color:var(--text-muted)">Frontend</td><td>Vanilla HTML/JS + Chart.js + Jinja2 templates</td></tr>
+          <tr><td style="color:var(--text-muted)">Auth</td><td>Supabase Auth (JWT, email/password, magic link)</td></tr>
+          <tr><td style="color:var(--text-muted)">Device API</td><td>ClearBlade MQTT (port 1884, TLS) + REST polling</td></tr>
+          <tr><td style="color:var(--text-muted)">TOU Service</td><td>Supabase PostgREST (country/region/utility/rate lookup)</td></tr>
+          <tr><td style="color:var(--text-muted)">Native App</td><td>pywebview (WKWebView on macOS)</td></tr>
+          <tr><td style="color:var(--text-muted)">Database</td><td>config/econet_data.db (SQLite)</td></tr>
           <tr><td style="color:var(--text-muted)">Credentials</td><td>config/.env (file perms 0600)</td></tr>
         </tbody>
       </table>
@@ -143,8 +187,8 @@
     <div class="help-body">
       <p>Found a bug? Have a feature request? We'd love to hear from you.</p>
       <div style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
-        <a href="https://github.com/charlesolivieramyot/heatsmart/issues" target="_blank" class="btn btn--outline btn--sm" style="text-decoration:none">Report an Issue</a>
-        <a href="mailto:charles@heatsmart.app?subject=HeatSmart%20Feedback" class="btn btn--outline btn--sm" style="text-decoration:none">Email Feedback</a>
+        <a href="https://github.com/charlesamyot/WattWise/issues" target="_blank" class="btn btn--outline btn--sm" style="text-decoration:none">Report an Issue</a>
+        <a href="mailto:charles@wattwise.app?subject=WattWise%20Feedback" class="btn btn--outline btn--sm" style="text-decoration:none">Email Feedback</a>
       </div>
     </div>
   </details>
@@ -155,7 +199,7 @@
     <div class="help-body">
       <p style="font-weight:600;margin-bottom:.5rem">Independent Product Notice</p>
       <p style="font-size:.82rem;color:var(--text-muted)">
-        HeatSmart is an independent product and is not affiliated with, endorsed by, or sponsored by
+        WattWise is an independent product and is not affiliated with, endorsed by, or sponsored by
         Rheem Manufacturing Company, EcoNet, or ClearBlade, Inc. "Rheem" and "EcoNet" are registered
         trademarks of Rheem Manufacturing Company. "ClearBlade" is a registered trademark of ClearBlade, Inc.
         All trademarks are the property of their respective owners.
@@ -163,15 +207,15 @@
 
       <p style="font-weight:600;margin-top:1rem;margin-bottom:.5rem">Device Safety</p>
       <p style="font-size:.82rem;color:var(--text-muted)">
-        HeatSmart allows remote control of your water heater, including temperature adjustments and mode changes.
-        Improper settings may result in scalding hot water, Legionella bacteria growth (below 120°F),
+        WattWise allows remote control of your water heater, including temperature adjustments and mode changes.
+        Improper settings may result in scalding hot water, Legionella bacteria growth (below 120 degrees F),
         equipment damage, or increased energy costs. You are solely responsible for ensuring safe operation
         of your water heater. Always follow your manufacturer's safety guidelines.
       </p>
 
       <p style="font-weight:600;margin-top:1rem;margin-bottom:.5rem">Credential Storage</p>
       <p style="font-size:.82rem;color:var(--text-muted)">
-        HeatSmart stores your EcoNet credentials in encrypted form (AES-256) to connect to your account
+        WattWise stores your EcoNet credentials in encrypted form (AES-256) to connect to your account
         on your behalf. While we employ industry-standard encryption, no system is completely secure.
         By providing your credentials, you acknowledge and accept this risk. You may request deletion
         of your credentials at any time.
@@ -180,22 +224,22 @@
       <p style="font-weight:600;margin-top:1rem;margin-bottom:.5rem">Energy Savings</p>
       <p style="font-size:.82rem;color:var(--text-muted)">
         Energy savings estimates are approximations based on your utility rate structure, usage patterns,
-        and device capabilities. Actual savings may vary significantly. HeatSmart does not guarantee
+        and device capabilities. Actual savings may vary significantly. WattWise does not guarantee
         any specific level of energy savings.
       </p>
 
       <p style="font-weight:600;margin-top:1rem;margin-bottom:.5rem">No Warranty</p>
       <p style="font-size:.82rem;color:var(--text-muted)">
-        HEATSMART IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+        WATTWISE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
         INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
         OR NON-INFRINGEMENT. USE AT YOUR OWN RISK.
       </p>
 
       <p style="font-weight:600;margin-top:1rem;margin-bottom:.5rem">License</p>
       <p style="font-size:.82rem;color:var(--text-muted)">
-        HeatSmart is licensed under the Business Source License 1.1 (BSL 1.1).
-        Free for personal and internal business use. Running a competing commercial water heater
-        monitoring service requires a commercial license. The source code converts to Apache 2.0
+        WattWise is licensed under the Business Source License 1.1 (BSL 1.1).
+        Free for personal and internal business use. Running a competing commercial energy monitoring
+        service requires a commercial license. The source code converts to Apache 2.0
         on April 1, 2030.
       </p>
       <p style="font-size:.82rem;color:var(--text-muted);margin-top:.5rem">
@@ -208,19 +252,19 @@
 
   <!-- About -->
   <details class="card">
-    <summary class="help-summary">About HeatSmart</summary>
+    <summary class="help-summary">About WattWise</summary>
     <div class="help-body">
-      <p><strong>HeatSmart</strong> — Smart heating, smart savings.</p>
+      <p><strong>WattWise</strong> -- Smart energy, real savings.</p>
       <p style="color:var(--text-muted);margin-top:.5rem">
         Built by Charles Amyot in Seattle, WA. Designed to help homeowners
-        reduce water heating costs with time-of-use rate optimization.
+        reduce energy costs with multi-device monitoring and time-of-use rate optimization.
       </p>
       <table class="data-table" style="margin-top:.75rem">
         <tbody>
-          <tr><td style="color:var(--text-muted)">Version</td><td>1.0.0</td></tr>
+          <tr><td style="color:var(--text-muted)">Version</td><td>1.1.0</td></tr>
           <tr><td style="color:var(--text-muted)">License</td><td>BSL 1.1</td></tr>
-          <tr><td style="color:var(--text-muted)">Source</td><td><a href="https://github.com/charlesolivieramyot/heatsmart" style="color:var(--accent)">GitHub</a></td></tr>
-          <tr><td style="color:var(--text-muted)">Contact</td><td>charles@heatsmart.app</td></tr>
+          <tr><td style="color:var(--text-muted)">Source</td><td><a href="https://github.com/charlesamyot/WattWise" style="color:var(--accent)">GitHub</a></td></tr>
+          <tr><td style="color:var(--text-muted)">Contact</td><td>charles@wattwise.app</td></tr>
         </tbody>
       </table>
     </div>

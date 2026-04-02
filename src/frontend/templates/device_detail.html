@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}Device Detail — WattWise{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:1rem">
+  <a href="/devices" style="color:var(--accent);text-decoration:none;font-size:.88rem">&larr; Back to Devices</a>
+</div>
+
+<!-- Device header -->
+<div class="card section" id="device-header" style="display:none">
+  <div class="section-header">
+    <div style="display:flex;align-items:center;gap:.75rem">
+      <span id="device-type-icon" style="font-size:1.5rem">🔥</span>
+      <div>
+        <span class="section-title" id="device-title" style="font-size:1.15rem">Water Heater</span>
+        <div style="font-size:.78rem;color:var(--text-muted)" id="device-provider">—</div>
+      </div>
+    </div>
+    <span id="device-connected" class="badge badge--unknown">—</span>
+  </div>
+</div>
+
+<!-- Device info card -->
+<div class="card section" id="device-card" style="display:none">
+  <div class="section-title" style="margin-bottom:.75rem">Device Information</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem 1.5rem">
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Location</div>
+      <div id="device-location" style="font-weight:600;margin-top:.15rem">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Model / Type</div>
+      <div id="device-type" style="font-weight:600;margin-top:.15rem">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Status</div>
+      <div id="device-running" style="font-weight:600;margin-top:.15rem">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Firmware</div>
+      <div id="device-firmware" style="font-size:.85rem;margin-top:.15rem">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Serial Number</div>
+      <div id="device-serial" style="font-size:.82rem;margin-top:.15rem;font-family:monospace">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">MAC Address</div>
+      <div id="device-mac" style="font-size:.82rem;margin-top:.15rem;font-family:monospace">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">ClearBlade ID</div>
+      <div id="device-cbid" style="font-size:.82rem;margin-top:.15rem;font-family:monospace">—</div>
+    </div>
+    <div>
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Account</div>
+      <div id="device-account" style="font-size:.85rem;margin-top:.15rem;word-break:break-all">—</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+
+  <!-- EcoNet credentials (only shown for econet provider) -->
+  <div class="card" id="credentials-card" style="display:none">
+    <div class="section-title" style="margin-bottom:1rem">EcoNet Account</div>
+    <div class="form-group">
+      <label class="form-label" for="cred-email">Email</label>
+      <input type="email" id="cred-email" class="form-input" placeholder="your@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="cred-password">Password</label>
+      <div class="input-group">
+        <input type="password" id="cred-password" class="form-input" placeholder="Enter password">
+        <button class="btn btn--outline btn--sm" type="button" onclick="togglePasswordVisibility()" id="pw-toggle-btn"
+                title="Show/hide password" style="border-left:none">Show</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+      <button class="btn btn--primary" onclick="saveCredentials()">Save &amp; Connect</button>
+      <span id="cred-status" class="badge badge--unknown" style="display:none"></span>
+    </div>
+    <div id="cred-error" class="alert alert--error" style="display:none;margin-top:.75rem"></div>
+  </div>
+
+  <!-- Device status -->
+  <div class="card" id="status-card">
+    <div class="section-title" style="margin-bottom:1rem">Device Status</div>
+    <table class="data-table">
+      <tbody>
+        <tr><td style="color:var(--text-muted)">Connection</td>
+            <td><span id="sys-connected" class="badge badge--unknown">—</span></td></tr>
+        <tr><td style="color:var(--text-muted)">MQTT</td>
+            <td><span id="sys-mqtt" class="badge badge--unknown">—</span></td></tr>
+        <tr><td style="color:var(--text-muted)">Last poll</td>
+            <td id="sys-last-poll">—</td></tr>
+        <tr><td style="color:var(--text-muted)">Last error</td>
+            <td id="sys-error" style="color:var(--danger);font-size:.82rem">—</td></tr>
+      </tbody>
+    </table>
+    <button class="btn btn--outline btn--sm" style="margin-top:.75rem" onclick="loadStatus()">Refresh</button>
+  </div>
+
+</div>
+
+<!-- Comfort preferences -->
+<div class="card section" style="margin-top:1.25rem">
+  <div class="section-title" style="margin-bottom:1rem">Comfort Preferences</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 2rem">
+    <div class="form-group">
+      <label class="form-label">Preferred setpoint (°F)</label>
+      <input type="number" id="pref-setpoint" class="form-input" min="110" max="140" value="120">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Minimum acceptable temp (°F)</label>
+      <input type="number" id="pref-min-temp" class="form-input" min="90" max="130" value="110">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Max recovery time (minutes)</label>
+      <input type="number" id="pref-recovery" class="form-input" min="10" max="240" value="60">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Away setpoint (°F, optional)</label>
+      <input type="number" id="pref-away" class="form-input" min="90" max="130" placeholder="Leave blank to disable">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Your timezone</label>
+      <select class="form-select" id="pref-timezone">
+        <option value="America/Los_Angeles">Pacific (PT)</option>
+        <option value="America/Denver">Mountain (MT)</option>
+        <option value="America/Chicago">Central (CT)</option>
+        <option value="America/New_York">Eastern (ET)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Device registered timezone</label>
+      <select class="form-select" id="pref-device-tz">
+        <option value="America/New_York">Eastern (ET) — ClearBlade default</option>
+        <option value="America/Chicago">Central (CT)</option>
+        <option value="America/Denver">Mountain (MT)</option>
+        <option value="America/Los_Angeles">Pacific (PT)</option>
+      </select>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem">
+        ClearBlade registers devices as ET by default. If your hours look shifted, adjust this.
+      </div>
+    </div>
+  </div>
+  <button class="btn btn--primary" onclick="savePreferences()">Save Preferences</button>
+  <span id="pref-status" style="display:none;margin-left:.75rem;font-size:.85rem;color:var(--success)">Saved</span>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DEVICE_ID = '{{ device_id }}';
+
+// ---- Password show/hide ----
+function togglePasswordVisibility() {
+  const input = document.getElementById('cred-password');
+  const btn = document.getElementById('pw-toggle-btn');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = 'Hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = 'Show';
+  }
+}
+
+// ---- Status ----
+async function loadStatus() {
+  const r = await fetch('/api/config/status');
+  const d = await r.json();
+  document.getElementById('sys-connected').className = d.connected ? 'badge badge--ok' : 'badge badge--error';
+  document.getElementById('sys-connected').textContent = d.connected ? 'Connected' : 'Disconnected';
+  document.getElementById('sys-mqtt').className = d.mqtt_connected ? 'badge badge--ok' : 'badge badge--warn';
+  document.getElementById('sys-mqtt').textContent = d.mqtt_connected ? 'Live' : 'Polling';
+  document.getElementById('sys-last-poll').textContent = d.last_poll ? new Date(d.last_poll).toLocaleTimeString() : '—';
+  document.getElementById('sys-error').textContent = d.last_error || 'None';
+}
+
+// ---- Credentials ----
+async function saveCredentials() {
+  const email = document.getElementById('cred-email').value.trim();
+  const password = document.getElementById('cred-password').value;
+  const statusEl = document.getElementById('cred-status');
+  const errorEl = document.getElementById('cred-error');
+  errorEl.style.display = 'none';
+  if (!email || !password) { showToast('Email and password are required.', 'warn'); return; }
+  statusEl.style.display = 'inline-block';
+  statusEl.className = 'badge badge--unknown';
+  statusEl.textContent = 'Connecting…';
+  try {
+    const r = await fetch('/api/config/credentials', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email, password}),
+    });
+    if (r.ok) {
+      statusEl.className = 'badge badge--ok';
+      statusEl.textContent = 'Connected';
+      showToast('Connected to EcoNet.', 'success');
+    } else {
+      const d = await r.json();
+      statusEl.className = 'badge badge--error';
+      statusEl.textContent = 'Failed';
+      errorEl.textContent = d.detail || 'Authentication failed';
+      errorEl.style.display = 'block';
+    }
+  } catch (e) {
+    statusEl.className = 'badge badge--error';
+    statusEl.textContent = 'Error';
+  }
+}
+
+// ---- Preferences ----
+async function loadPreferences() {
+  const r = await fetch('/api/config/preferences');
+  const d = await r.json();
+  document.getElementById('pref-setpoint').value = d.preferred_setpoint;
+  document.getElementById('pref-min-temp').value = d.min_acceptable_temp;
+  document.getElementById('pref-recovery').value = d.max_recovery_minutes;
+  if (d.away_setpoint) document.getElementById('pref-away').value = d.away_setpoint;
+}
+
+async function savePreferences() {
+  const body = {
+    preferred_setpoint: +document.getElementById('pref-setpoint').value,
+    min_acceptable_temp: +document.getElementById('pref-min-temp').value,
+    max_recovery_minutes: +document.getElementById('pref-recovery').value,
+    away_setpoint: document.getElementById('pref-away').value ? +document.getElementById('pref-away').value : null,
+  };
+  const r = await fetch('/api/config/preferences', {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+  });
+  if (r.ok) { showToast('Preferences saved.', 'success'); }
+  else { showToast('Failed to save preferences.', 'error'); }
+}
+
+// ---- Device info ----
+async function loadDeviceInfo() {
+  try {
+    const r = await fetch('/api/device');
+    if (!r.ok) return;
+    const d = await r.json();
+
+    // Header
+    document.getElementById('device-header').style.display = 'block';
+    document.getElementById('device-title').textContent = d.name || 'Water Heater';
+    const connBadge = document.getElementById('device-connected');
+    connBadge.textContent = d.connected ? 'Connected' : 'Offline';
+    connBadge.className = d.connected ? 'badge badge--ok' : 'badge badge--error';
+    document.getElementById('device-provider').textContent = 'EcoNet / ClearBlade';
+
+    // Type icon
+    const typeIcons = {heatpumpWaterHeaterGen5: '🌡️', WH: '🔥'};
+    document.getElementById('device-type-icon').textContent = typeIcons[d.equipment_type] || '🔥';
+
+    // Info card
+    document.getElementById('device-card').style.display = 'block';
+    const loc = d.location;
+    document.getElementById('device-location').textContent = loc ? `${loc.city}, ${loc.state} ${loc.zipcode}` : '—';
+    const typeLabels = {heatpumpWaterHeaterGen5: 'Heat Pump WH (Gen 5)', WH: 'Water Heater'};
+    document.getElementById('device-type').textContent = typeLabels[d.equipment_type] || d.equipment_type || d.device_type || '—';
+    document.getElementById('device-running').innerHTML = d.running
+      ? `<span style="color:var(--success)">${d.running_state || 'Running'}</span>`
+      : '<span style="color:var(--text-muted)">Idle</span>';
+    document.getElementById('device-firmware').textContent = d.firmware || '—';
+    document.getElementById('device-serial').textContent = d.device_id || '—';
+    document.getElementById('device-mac').textContent = d.mac_address || '—';
+    document.getElementById('device-cbid').textContent = d.device_name || '—';
+    document.getElementById('device-account').textContent = d.econet_email || '—';
+
+    // Show credentials card (always econet for now)
+    document.getElementById('credentials-card').style.display = 'block';
+    if (d.econet_email) {
+      document.getElementById('cred-email').value = d.econet_email;
+    }
+  } catch (e) {
+    // Device not available
+  }
+}
+
+// ---- Init ----
+loadDeviceInfo();
+loadStatus();
+loadPreferences();
+setInterval(loadStatus, 30000);
+</script>
+{% endblock %}

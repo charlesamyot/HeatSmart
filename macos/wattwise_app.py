@@ -171,7 +171,7 @@ def main():
         width=1100,
         height=750,
         min_size=(800, 500),
-        text_select=False,
+        text_select=True,
         confirm_close=False,
         js_api=bridge,
     )

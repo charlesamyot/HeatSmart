@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>HeatSmart — Sign In</title>
+  <title>WattWise — Sign In</title>
   <link rel="stylesheet" href="/static/css/style.css">
   <meta name="supabase-url" content="{{ supabase_url or '' }}">
   <meta name="supabase-anon-key" content="{{ supabase_key or '' }}">
@@ -81,9 +81,14 @@
   <div class="login-page">
     <div class="login-card">
       <div class="login-logo">
-        <div style="font-size:2.5rem">🔥</div>
-        <h1>HeatSmart</h1>
-        <p>Smart heating, smart savings</p>
+        <svg width="56" height="56" viewBox="0 0 512 512" fill="none">
+          <defs><linearGradient id="ww-login-logo" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#10B981"/></linearGradient></defs>
+          <path d="M134 433c0-218 164-273 245-354 0 136-27 245-136 300" stroke="url(#ww-login-logo)" stroke-width="11" stroke-linecap="round" fill="none"/>
+          <path d="M134 432c50-95 112-169 193-207" stroke="url(#ww-login-logo)" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.55"/>
+          <circle cx="134" cy="433" r="18" fill="#10B981"/>
+        </svg>
+        <h1>WattWise</h1>
+        <p>Smart energy, real savings.</p>
       </div>
 
       <!-- Email sign in -->
@@ -99,11 +104,11 @@
         Sign In
       </button>
 
-      <div style="text-align:center;margin-top:.75rem">
-        <button style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:.85rem"
-                onclick="signUpEmail()">
-          Don't have an account? Sign up
+      <div style="display:flex;justify-content:space-between;margin-top:.75rem">
+        <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.82rem" onclick="resetPassword()">
+          Forgot password?
         </button>
+        <a href="/signup" style="color:var(--accent);font-size:.85rem;text-decoration:none">Create account</a>
       </div>
 
       <div class="login-divider">or</div>
@@ -118,5 +123,10 @@
   </div>
 
   <script src="/static/js/auth.js"></script>
+  <script>
+  document.getElementById('login-password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') signInEmail();
+  });
+  </script>
 </body>
 </html>

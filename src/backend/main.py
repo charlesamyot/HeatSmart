@@ -19,6 +19,7 @@ from .poller import Poller
 from .routes_api import router as api_router, set_client
 from .routes_auth import router as auth_router
 from .routes_devices import router as devices_router
+from .routes_locations import router as locations_router
 from .routes_pages import router as pages_router
 from .routes_tou import router as tou_router
 
@@ -73,7 +74,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="WattWise",
-    description="Smart energy, real savings. Monitor and optimize your home appliances with TOU rate awareness.",
+    description="Whole-home energy savings platform — monitor and optimize your connected devices",
     version="1.1.0",
     lifespan=lifespan,
 )
@@ -110,6 +111,7 @@ if static_path.exists():
 app.include_router(api_router)
 app.include_router(auth_router)
 app.include_router(devices_router)
+app.include_router(locations_router)
 app.include_router(tou_router)
 app.include_router(pages_router)
 

@@ -25,6 +25,19 @@ async def login_page(request: Request):
     })
 
 
+@router.get("/signup", response_class=HTMLResponse)
+async def signup_page(request: Request):
+    user = await get_optional_user(request)
+    if user:
+        return RedirectResponse("/dashboard")
+    s = get_settings()
+    return _templates.TemplateResponse("signup.html", {
+        "request": request,
+        "supabase_url": s.supabase_url,
+        "supabase_key": s.supabase_key,
+    })
+
+
 @router.get("/auth/callback", response_class=HTMLResponse)
 async def auth_callback(request: Request):
     """Handle Supabase auth redirects (magic link, OAuth).

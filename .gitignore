@@ -18,3 +18,5 @@ venv/
 macos/build/
 macos/dist/
 .claude-flow/
+config/server.log
+config/menubar.json

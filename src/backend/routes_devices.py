@@ -24,6 +24,7 @@ def _device_to_out(device: Device) -> DeviceOut:
         provider=device.provider,
         device_type=device.device_type,
         external_device_id=device.external_device_id,
+        location_id=device.location_id,
         is_active=device.is_active,
         created_at=device.created_at,
     )
@@ -75,6 +76,7 @@ async def add_device(
         provider=body.provider,
         device_type=body.device_type,
         external_device_id=external_device_id,
+        location_id=body.location_id,
         is_active=True,
     )
     session.add(device)
@@ -110,6 +112,8 @@ async def update_device(
 
     if body.name is not None:
         device.name = body.name
+    if body.location_id is not None:
+        device.location_id = body.location_id
     if body.is_active is not None:
         device.is_active = body.is_active
 

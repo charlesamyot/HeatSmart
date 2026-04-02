@@ -1,6 +1,6 @@
-"""SQLAlchemy ORM models for EcoNet water heater data storage.
+"""SQLAlchemy ORM models for WattWise data storage.
 
-Uses Optional[X] instead of X | None for Python 3.9 compatibility —
+Uses Optional[X] instead of X | None for Python 3.9 compatibility --
 SQLAlchemy evaluates Mapped annotations at runtime so __future__ annotations
 does not help here.
 """
@@ -33,6 +33,7 @@ class HeaterReading(Base):
     running: Mapped[bool] = mapped_column(Boolean, nullable=False)
     running_state: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     wifi_signal: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
 
 
 class EnergyUsage(Base):
@@ -123,10 +124,27 @@ class Device(Base):
     """Registered device (water heater, EV charger, etc.) for multi-device support."""
     __tablename__ = "devices"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)  # UUID as string
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
-    provider: Mapped[str] = mapped_column(String(32), nullable=False)  # econet, smartthings, manual
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
     device_type: Mapped[str] = mapped_column(String(32), nullable=False, default="water_heater")
     external_device_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    location_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
+
+
+class Location(Base):
+    """User-defined location for multi-site management."""
+    __tablename__ = "locations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    address: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    city: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    state: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    zip_code: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    country: Mapped[str] = mapped_column(String(64), nullable=False, default="US")
+    utility_name: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())

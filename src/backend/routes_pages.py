@@ -51,6 +51,11 @@ async def devices(request: Request):
     return _templates.TemplateResponse("devices.html", _ctx(request))
 
 
+@router.get("/devices/{device_id}", response_class=HTMLResponse)
+async def device_detail(request: Request, device_id: str):
+    return _templates.TemplateResponse("device_detail.html", _ctx(request, device_id=device_id))
+
+
 @router.get("/settings", response_class=HTMLResponse)
 async def settings(request: Request):
     return _templates.TemplateResponse("settings.html", _ctx(request))

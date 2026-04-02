@@ -1,8 +1,13 @@
 {% extends "base.html" %}
-{% block title %}History — EcoNet Monitor{% endblock %}
+{% block title %}History — WattWise{% endblock %}
 
 {% block content %}
-<h1 class="page-title">History</h1>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1 class="page-title" style="margin-bottom:0">History</h1>
+  <select class="form-select" id="history-device-filter" style="width:auto;font-size:.82rem;padding:.3rem .6rem" onchange="loadData()">
+    <option value="all">All Devices</option>
+  </select>
+</div>
 
 <!-- Unified toolbar -->
 <div class="card section" style="padding:.75rem 1rem">
@@ -153,6 +158,22 @@ document.getElementById('export-start').value = thirtyAgo.toISOString().slice(0,
 
 const cs = () => getComputedStyle(document.documentElement);
 const RANGE_LABELS = {day:'Today',yesterday:'Yesterday',week:'7 Days',month:'30 Days',quarter:'90 Days',year:'1 Year'};
+
+// Populate device filter
+(async function loadDeviceFilter() {
+  try {
+    const r = await fetch('/api/devices');
+    if (!r.ok) return;
+    const devices = await r.json();
+    const sel = document.getElementById('history-device-filter');
+    devices.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = d.name;
+      sel.appendChild(opt);
+    });
+  } catch {}
+})();
 
 function setGranularity(g, btn) {
   currentGranularity = g;

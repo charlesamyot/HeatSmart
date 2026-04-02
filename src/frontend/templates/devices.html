@@ -100,6 +100,12 @@
             </select>
           </div>
         </div>
+        <div class="form-group" id="add-location-group">
+          <label class="form-label" for="add-location">Location</label>
+          <select class="form-select" id="add-location">
+            <option value="">No location assigned</option>
+          </select>
+        </div>
         <div id="add-error" style="display:none;padding:.5rem .75rem;border-radius:var(--radius);background:var(--danger);color:#fff;font-size:.82rem;margin-bottom:.75rem"></div>
         <button class="btn btn--primary" style="width:100%;justify-content:center" id="add-submit-btn" onclick="submitDevice()">
           Connect Device
@@ -160,11 +166,26 @@
 {% block scripts %}
 <script>
 let selectedProvider = null;
+let locationsCache = [];
+
+async function loadLocationsForPicker() {
+  try {
+    const r = await fetch('/api/locations');
+    if (!r.ok) return;
+    locationsCache = await r.json();
+    const sel = document.getElementById('add-location');
+    sel.innerHTML = '<option value="">No location assigned</option>';
+    locationsCache.forEach(l => {
+      sel.innerHTML += `<option value="${l.id}">${l.name}${l.city ? ' (' + l.city + ')' : ''}</option>`;
+    });
+  } catch {}
+}
 
 function showAddDevice() {
   document.getElementById('add-device-overlay').classList.add('visible');
   document.getElementById('add-step-1').style.display = 'block';
   document.getElementById('add-step-2').style.display = 'none';
+  loadLocationsForPicker();
 }
 
 function hideAddDevice() {
@@ -208,12 +229,14 @@ async function submitDevice() {
   btn.textContent = 'Connecting...';
 
   try {
+    const locationId = document.getElementById('add-location').value || null;
     let body;
     if (selectedProvider === 'econet') {
       body = {
         provider: 'econet',
         name: 'Water Heater',
         device_type: 'water_heater',
+        location_id: locationId ? parseInt(locationId) : null,
         credentials: {
           email: document.getElementById('add-email').value.trim(),
           password: document.getElementById('add-password').value,
@@ -224,6 +247,7 @@ async function submitDevice() {
         provider: 'manual',
         name: document.getElementById('add-name').value.trim(),
         device_type: document.getElementById('add-type').value,
+        location_id: locationId ? parseInt(locationId) : null,
       };
     }
 
@@ -263,6 +287,8 @@ const deviceTypeLabels = {
 
 async function loadDevices() {
   try {
+    // Load locations first for the assignment dropdown
+    if (!locationsCache.length) await loadLocationsForPicker();
     const r = await fetch('/api/devices');
     if (!r.ok) return;
     const devices = await r.json();
@@ -283,23 +309,69 @@ async function loadDevices() {
       return;
     }
 
-    container.innerHTML = devices.map(d => `
-      <div class="card device-card" onclick="location.href='/devices/${d.id}'">
-        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
-          <div class="device-type-icon" style="background:var(--accent-light);font-size:1.4rem">
+    // Build location name map
+    const locMap = {};
+    locationsCache.forEach(l => { locMap[l.id] = l.name; });
+
+    container.innerHTML = devices.map(d => {
+      const locName = d.location_id ? (locMap[d.location_id] || 'Location #' + d.location_id) : null;
+      return `
+      <div class="card device-card">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <div class="device-type-icon" style="background:var(--accent-light);font-size:1.4rem;cursor:pointer" onclick="location.href='/devices/${d.id}'">
             ${deviceTypeIcons[d.device_type] || '📦'}
           </div>
-          <div>
+          <div style="flex:1;cursor:pointer" onclick="location.href='/devices/${d.id}'">
             <div style="font-weight:600;font-size:.95rem">${d.name}</div>
-            <div style="font-size:.78rem;color:var(--text-muted)">${deviceTypeLabels[d.device_type] || d.device_type} &middot; ${d.provider}</div>
+            <div style="font-size:.78rem;color:var(--text-muted)">${deviceTypeLabels[d.device_type] || d.device_type} &middot; ${d.provider}${locName ? ' &middot; ' + locName : ''}</div>
           </div>
-          <span class="badge ${d.is_active ? 'badge--ok' : 'badge--unknown'}" style="margin-left:auto">
-            ${d.is_active ? 'Active' : 'Inactive'}
-          </span>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <select class="form-select" style="width:auto;font-size:.75rem;padding:.15rem .4rem" onchange="assignDeviceLocation('${d.id}',this.value)" title="Assign location">
+              <option value="">No location</option>
+              ${locationsCache.map(l => `<option value="${l.id}" ${d.location_id === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
+            </select>
+            <span class="badge ${d.is_active ? 'badge--ok' : 'badge--unknown'}">
+              ${d.is_active ? 'Active' : 'Inactive'}
+            </span>
+            <button class="btn btn--outline btn--sm" style="color:var(--danger);border-color:var(--danger);padding:.2rem .5rem;font-size:.75rem" onclick="event.stopPropagation();deleteDevice('${d.id}','${d.name}')">Remove</button>
+          </div>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   } catch {}
+}
+
+async function assignDeviceLocation(deviceId, locationId) {
+  try {
+    const body = { location_id: locationId ? parseInt(locationId) : null };
+    const r = await fetch(`/api/devices/${deviceId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (r.ok) {
+      showToast('Location updated', 'success');
+    } else {
+      showToast('Failed to update location', 'error');
+    }
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function deleteDevice(id, name) {
+  if (!confirm(`Remove "${name}"? This cannot be undone.`)) return;
+  try {
+    const r = await fetch(`/api/devices/${id}`, { method: 'DELETE' });
+    if (r.ok) {
+      showToast(`${name} removed`, 'success');
+      loadDevices();
+    } else {
+      showToast('Failed to remove device', 'error');
+    }
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
 }
 
 // Close modal on overlay click
