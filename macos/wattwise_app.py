@@ -23,7 +23,7 @@ if ".app" in APP_DIR:
 
 CONFIG_PATH = os.path.join(APP_DIR, "config", "menubar.json")
 LOG_PATH = os.path.join(APP_DIR, "config", "server.log")
-DEFAULT_PORT = 7777
+DEFAULT_PORT = 8000
 PYTHON_PATH = "/usr/bin/python3"
 
 
@@ -137,6 +137,16 @@ class WattWiseBridge:
 def main():
     import webview
 
+    # Set macOS process name so menu bar shows "WattWise" instead of "Python"
+    try:
+        from Foundation import NSBundle
+        bundle = NSBundle.mainBundle()
+        info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
+        if info:
+            info['CFBundleName'] = 'WattWise'
+    except ImportError:
+        pass  # Not available outside .app bundle or without PyObjC
+
     config = load_config()
     port = config.get("port", DEFAULT_PORT)
 
@@ -153,6 +163,8 @@ def main():
     threading.Thread(target=boot_server, daemon=True).start()
 
     # Create native window immediately (shows loading state)
+    bridge = WattWiseBridge(None, server, config)
+
     window = webview.create_window(
         title="WattWise",
         url=f"http://localhost:{port}",
@@ -161,9 +173,10 @@ def main():
         min_size=(800, 500),
         text_select=False,
         confirm_close=False,
+        js_api=bridge,
     )
 
-    bridge = WattWiseBridge(window, server, config)
+    bridge._window = window
 
     def on_loaded():
         """Called when the webview finishes loading a page."""
@@ -181,7 +194,6 @@ def main():
 
     # Start the webview event loop (blocks until window closes)
     webview.start(
-        js_api=bridge,
         debug=os.environ.get("WATTWISE_DEBUG", "") == "1",
     )
 
